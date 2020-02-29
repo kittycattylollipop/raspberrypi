@@ -626,7 +626,7 @@ class mywindow(QMainWindow,Ui_Client):
                 self.HSlider_Servo1.setValue(self.servo1)
                 self.VSlider_Servo2.setValue(self.servo2)
     def time(self):
-        print("viz timer triggered")
+        #print("viz timer triggered")
         self.TCP.video_Flag=False
         if  self.is_valid_jpg('video.jpg'):
             self.label_Video.setPixmap(QtGui.QPixmap(QtCore.QString.fromUtf8('video.jpg')))
