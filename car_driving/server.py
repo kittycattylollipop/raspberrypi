@@ -17,6 +17,7 @@ from Thread import *
 from Light import *
 from Ultrasonic import *
 from Line_Tracking import *
+from eco_disaster import *
 from threading import Timer
 from threading import Thread
 from Command import COMMAND as cmd
@@ -31,6 +32,9 @@ class Server:
         self.adc=Adc()
         self.light=Light()
         self.infrared=Line_Tracking()
+        self.ecodisaster = EcoDisaster()
+        self.newFrameEvent = threading.Event()
+        self.newFrameLock = threading.Lock()
         self.tcp_Flag = True
         self.sonic=False
         self.Light=False
@@ -85,6 +89,7 @@ class Server:
                 stream = io.BytesIO()
                 # send jpeg format video stream
                 print "Start transmit ... "
+
                 for foo in camera.capture_continuous(stream, 'jpeg', use_video_port = True):
                     try:
                         self.connection.flush()
@@ -93,6 +98,25 @@ class Server:
                         length=len(b)
                         if length >5120000:
                             continue
+                        #### a new frame is ready, send to consumers ####
+
+                        #################################
+                        ## call eco-disaster
+                        ###################################
+                        # copy the buffer, using lock
+                        """
+                        if self.newFrameLock.acquire(False): # (non-blocking)
+                            try:
+                                self.ecodisaster.stream.write(b)
+                            finally:
+                                self.newFrameLock.release()
+                        """
+                        with self.newFrameLock:  # blocking
+                            self.ecodisaster.stream.write(b)
+                        # set the event ready
+                        self.newFrameEvent.set()
+
+                        # send over network to display on client
                         lengthBin = struct.pack('L', length)
                         self.connection.write(lengthBin)
                         self.connection.write(b)
@@ -164,7 +188,10 @@ class Server:
                         elif data[1]=='two':
                             self.stopMode()
                             self.Mode='two'
-                            self.lightRun=Thread(target=self.light.run)
+                            #hijack light run for now for ECO-DiSASTER
+                            #self.lightRun=threading.Thread(target=self.light.run)
+                            self.lightRun=threading.Thread(target=self.ecodisaster.run, args=(self.newFrameEvent,
+                                                                                              self.newFrameLock))
                             self.lightRun.start()
                         elif data[1]=='three':
                             self.stopMode()
