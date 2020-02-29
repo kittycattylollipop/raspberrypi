@@ -35,6 +35,8 @@ class Line_Tracking:
             elif self.LMR==7:
                 pass
             
+            time.sleep(0.01)
+            
 infrared=Line_Tracking()
 # Main program logic follows:
 if __name__ == '__main__':

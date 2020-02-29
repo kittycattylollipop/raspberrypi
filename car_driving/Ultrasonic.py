@@ -88,7 +88,8 @@ class Ultrasonic:
                 else:
                     R = self.get_distance()
                 self.run_motor(L,M,R)
-        
+            
+            time.sleep(0.01)
             
         
 ultrasonic=Ultrasonic()              

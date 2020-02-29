@@ -176,7 +176,7 @@ class Server:
                             self.Mode='four'
                             self.infraredRun=threading.Thread(target=self.infrared.run)
                             self.infraredRun.start()
-                            
+                        print("server MODE = ", self.Mode)
                     elif (cmd.CMD_MOTOR in data) and self.Mode=='one':
                         try:
                             data1=int(data[1])

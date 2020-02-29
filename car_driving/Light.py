@@ -24,7 +24,7 @@ class Light:
                     elif R > L :                        
                         self.PWM.turn_right(1400,1200)
                         #self.PWM.setMotorModel(1400,1400,-1200,-1200)                        
-                    
+                time.sleep(0.01)    
         except KeyboardInterrupt:
            led_Car.PWM.setMotorModel(0,0,0,0) 
 
