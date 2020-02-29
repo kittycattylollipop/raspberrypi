@@ -112,6 +112,9 @@ class Server:
                                 self.newFrameLock.release()
                         """
                         with self.newFrameLock:  # blocking
+                            # print("Server writing frame to eco disaster")
+                            self.ecodisaster.stream.seek(0)
+                            self.ecodisaster.stream.truncate()
                             self.ecodisaster.stream.write(b)
                         # set the event ready
                         self.newFrameEvent.set()
@@ -190,6 +193,8 @@ class Server:
                             self.Mode='two'
                             #hijack light run for now for ECO-DiSASTER
                             #self.lightRun=threading.Thread(target=self.light.run)
+                            
+                            print("ECO-Disaster thread started")
                             self.lightRun=threading.Thread(target=self.ecodisaster.run, args=(self.newFrameEvent,
                                                                                               self.newFrameLock))
                             self.lightRun.start()
