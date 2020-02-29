@@ -68,10 +68,14 @@ class VideoStreaming:
                 stream_bytes= self.connection.read(4) 
                 leng=struct.unpack('L', stream_bytes[:4])
                 jpg=self.connection.read(leng[0])
+                #print("Client_streaming running")
                 if self.IsValidImage4Bytes(jpg):
                             image = cv2.imdecode(np.frombuffer(jpg, dtype=np.uint8), cv2.IMREAD_COLOR)
+                            #print("image received")
                             if self.video_Flag:
-                                self.face_detect(image)
+                                #print("image written")
+                                #self.face_detect(image)
+                                cv2.imwrite('video.jpg', image)
                                 self.video_Flag=False
             except:
                 break

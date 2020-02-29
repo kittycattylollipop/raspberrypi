@@ -490,19 +490,23 @@ class mywindow(QMainWindow,Ui_Client):
     def on_btn_Mode(self,Mode):
         if Mode.text() == "M-Free":
             if Mode.isChecked() == True:
+                print("Mode = M-Free")
                 timer.start(34)
                 self.TCP.sendData(cmd.CMD_MODE+self.intervalChar+'one'+self.endChar)
 
         if Mode.text() == "M-Light":
             if Mode.isChecked() == True:
-                timer.stop()
+                print("Mode = M-Light")
+                #timer.stop()
                 self.TCP.sendData(cmd.CMD_MODE+self.intervalChar+'two'+self.endChar)
         if Mode.text() == "M-Sonic":
             if Mode.isChecked() == True:
+                print("Mode = M-Sonic")
                 timer.stop()
                 self.TCP.sendData(cmd.CMD_MODE+self.intervalChar+'three'+self.endChar)
         if Mode.text() == "M-Line":
             if Mode.isChecked() == True:
+                print("Mode = M-Line")
                 timer.stop()
                 self.TCP.sendData(cmd.CMD_MODE+self.intervalChar+'four'+self.endChar)
 
@@ -622,6 +626,7 @@ class mywindow(QMainWindow,Ui_Client):
                 self.HSlider_Servo1.setValue(self.servo1)
                 self.VSlider_Servo2.setValue(self.servo2)
     def time(self):
+        print("viz timer triggered")
         self.TCP.video_Flag=False
         if  self.is_valid_jpg('video.jpg'):
             self.label_Video.setPixmap(QtGui.QPixmap(QtCore.QString.fromUtf8('video.jpg')))
