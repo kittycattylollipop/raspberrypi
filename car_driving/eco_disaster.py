@@ -15,6 +15,7 @@ logging.basicConfig(level=logging.DEBUG,
 class EcoDisaster:
     def __init__(self):
         self.stream = io.BytesIO() # frame buffer
+        self.sensors = None
         self.perception = None
         self.planning = None
 

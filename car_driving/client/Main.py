@@ -502,12 +502,12 @@ class mywindow(QMainWindow,Ui_Client):
         if Mode.text() == "M-Sonic":
             if Mode.isChecked() == True:
                 print("Mode = M-Sonic")
-                timer.stop()
+                #timer.stop()
                 self.TCP.sendData(cmd.CMD_MODE+self.intervalChar+'three'+self.endChar)
         if Mode.text() == "M-Line":
             if Mode.isChecked() == True:
                 print("Mode = M-Line")
-                timer.stop()
+                #timer.stop()
                 self.TCP.sendData(cmd.CMD_MODE+self.intervalChar+'four'+self.endChar)
 
 
