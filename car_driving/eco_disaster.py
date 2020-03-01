@@ -42,13 +42,14 @@ class EcoDisaster:
                     self.stream.truncate()
 
                 # TEMP code write out to an image, and show image
-                savename = '/home/pi/temp/videoimage' + str(counter) +'.jpg'
+                savename = '/home/pi/temp/videoimage{0:06d}.jpg'.format(counter)
                 print('write to image '+ savename)        
                 cv2.imwrite(savename, image)
                 counter += 1
 
                 # pause and clear event for the next frame
-                time.sleep(0.005)
+                #time.sleep(0.005)
+                time.sleep(0.1)
                 frame_event.clear()
                 
             except:
