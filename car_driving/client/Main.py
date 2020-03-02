@@ -258,30 +258,32 @@ class mywindow(QMainWindow,Ui_Client):
             pass
         else :
             if event.key() == Qt.Key_W:
-                self.on_btn_ForWard()
-                self.Key_W=True
+                if not self.Key_W:
+                    self.on_btn_ForWard()
+                    self.Key_W=True
             elif event.key() == Qt.Key_S:
-                self.on_btn_BackWard()
-                self.Key_S=True
+                if not self.Key_S:
+                    self.on_btn_BackWard()
+                    self.Key_S=True
             elif event.key() == Qt.Key_A:
-                self.on_btn_Turn_Left()
-                self.Key_A=True
+                if not self.Key_A:
+                    self.on_btn_Turn_Left()
+                    self.Key_A=True
             elif event.key() == Qt.Key_D:
-                self.on_btn_Turn_Right()
-                self.Key_D=True
+                if not self.Key_D:
+                    self.on_btn_Turn_Right()
+                    self.Key_D=True
             elif event.key() == Qt.Key_Space:
                 self.on_btn_Buzzer()
                 self.Key_Space=True
 
     def keyReleaseEvent(self, event):
-
-        """
         if(event.key() == Qt.Key_W):
-            time.sleep(0.05)
-            if(event.key() == Qt.Key_W):
-                if not(event.isAutoRepeat()) and self.Key_W==True:
-                    self.on_btn_Stop()
-                    self.Key_W=False
+            #time.sleep(0.05)
+            #if(event.key() == Qt.Key_W):
+            if not(event.isAutoRepeat()) and self.Key_W==True:
+                self.on_btn_Stop()
+                self.Key_W=False
         elif(event.key() == Qt.Key_A):
             if not(event.isAutoRepeat()) and self.Key_A==True:
                 self.on_btn_Stop()
@@ -294,23 +296,6 @@ class mywindow(QMainWindow,Ui_Client):
             if not(event.isAutoRepeat()) and self.Key_D==True:
                 self.on_btn_Stop()
                 self.Key_D=False
-        """
-        if (event.key() == Qt.Key_W):
-            if not (event.isAutoRepeat()) and self.Key_W == True:
-                #self.on_btn_Stop()
-                self.Key_W = False
-        elif (event.key() == Qt.Key_A):
-            if not (event.isAutoRepeat()) and self.Key_A == True:
-                self.on_btn_Stop()
-                self.Key_A = False
-        elif (event.key() == Qt.Key_S):
-            if not (event.isAutoRepeat()) and self.Key_S == True:
-                #self.on_btn_Stop()
-                self.Key_S = False
-        elif (event.key() == Qt.Key_D):
-            if not (event.isAutoRepeat()) and self.Key_D == True:
-                self.on_btn_Stop()
-                self.Key_D = False
 
         if(event.key() == Qt.Key_Space):
             if not(event.isAutoRepeat()) and self.Key_Space==True:
