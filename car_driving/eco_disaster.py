@@ -43,7 +43,7 @@ class EcoDisaster:
 
                 # TEMP code write out to an image, and show image
                 savename = '/home/pi/temp/videoimage{0:06d}.jpg'.format(counter)
-                print('write to image '+ savename)        
+                #print('write to image '+ savename)        
                 cv2.imwrite(savename, image)
                 counter += 1
 
