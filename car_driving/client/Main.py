@@ -275,6 +275,7 @@ class mywindow(QMainWindow,Ui_Client):
 
     def keyReleaseEvent(self, event):
 
+        """
         if(event.key() == Qt.Key_W):
             time.sleep(0.05)
             if(event.key() == Qt.Key_W):
@@ -293,6 +294,23 @@ class mywindow(QMainWindow,Ui_Client):
             if not(event.isAutoRepeat()) and self.Key_D==True:
                 self.on_btn_Stop()
                 self.Key_D=False
+        """
+        if (event.key() == Qt.Key_W):
+            if not (event.isAutoRepeat()) and self.Key_W == True:
+                #self.on_btn_Stop()
+                self.Key_W = False
+        elif (event.key() == Qt.Key_A):
+            if not (event.isAutoRepeat()) and self.Key_A == True:
+                self.on_btn_Stop()
+                self.Key_A = False
+        elif (event.key() == Qt.Key_S):
+            if not (event.isAutoRepeat()) and self.Key_S == True:
+                #self.on_btn_Stop()
+                self.Key_S = False
+        elif (event.key() == Qt.Key_D):
+            if not (event.isAutoRepeat()) and self.Key_D == True:
+                self.on_btn_Stop()
+                self.Key_D = False
 
         if(event.key() == Qt.Key_Space):
             if not(event.isAutoRepeat()) and self.Key_Space==True:
@@ -306,7 +324,8 @@ class mywindow(QMainWindow,Ui_Client):
         self.TCP.sendData(cmd.CMD_MOTOR+ForWard)
 
     def on_btn_Turn_Left(self):
-        Turn_Left=self.intervalChar+str(1200)+self.intervalChar+str(1200)+self.intervalChar+str(-1200)+self.intervalChar+str(-1200)+self.endChar
+        #Turn_Left=self.intervalChar+str(1200)+self.intervalChar+str(1200)+self.intervalChar+str(-1200)+self.intervalChar+str(-1200)+self.endChar
+        Turn_Left = self.intervalChar + str(1600) + self.intervalChar + str(1600) + self.intervalChar + str(-1600) + self.intervalChar + str(-1600) + self.endChar
         self.TCP.sendData(cmd.CMD_MOTOR+ Turn_Left)
 
     def on_btn_BackWard(self):
@@ -314,7 +333,7 @@ class mywindow(QMainWindow,Ui_Client):
         self.TCP.sendData(cmd.CMD_MOTOR+BackWard)
 
     def on_btn_Turn_Right(self):
-        Turn_Right=self.intervalChar+str(-1200)+self.intervalChar+str(-1200)+self.intervalChar+str(1200)+self.intervalChar+str(1200)+self.endChar
+        Turn_Right=self.intervalChar+str(-1600)+self.intervalChar+str(-1600)+self.intervalChar+str(1600)+self.intervalChar+str(1600)+self.endChar
         self.TCP.sendData(cmd.CMD_MOTOR+Turn_Right)
 
     def on_btn_Stop(self):
