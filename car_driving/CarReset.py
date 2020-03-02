@@ -1,6 +1,7 @@
-from Led import Led
-from Motor import Motor
-from servo import Servo
+import sys
+from Led import *
+from Motor import *
+from servo import *
 
 
 # Main program logic follows:
@@ -16,4 +17,7 @@ if __name__ == '__main__':
     # turn off led
     led = Led()
     led.colorWipe(led.strip, Color(0, 0, 0))  # turn off the light
+    print("Done")
+    
+    
 
