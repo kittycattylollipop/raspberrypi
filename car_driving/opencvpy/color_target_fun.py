@@ -51,8 +51,7 @@ def RGB_Ratio_Mask(img, ratioImg, rgbTh, ratioTh, viz=False, figsize=[12,6]):
         plt.subplot(131),plt.imshow(img)
         plt.subplot(132),plt.imshow(mask,'gray')
         plt.subplot(133), plt.imshow(img * np.dstack((mask, mask, mask)))
-        plt.show()
-    
+        
     return mask
 
 #input binary mask (0,1), or boolean mask (True/False)
@@ -67,3 +66,20 @@ def maskLabeling(mask, sizeTh):
             labels_im[labels_im==idx] = labCount
             
     return labCount, labels_im
+
+
+#show image map with different color 
+def imshow_components(labels):
+    # Map component labels to hue val
+    label_hue = np.uint8(179*labels/np.max(labels))
+    blank_ch = 255*np.ones_like(label_hue)
+    labeled_img = cv2.merge([label_hue, blank_ch, blank_ch])
+
+    # cvt to BGR for display
+    labeled_img = cv2.cvtColor(labeled_img, cv2.COLOR_HSV2RGB)
+
+    # set bg label to black
+    labeled_img[label_hue==0] = 0
+
+    plt.subplot(111),plt.imshow(labeled_img)
+    
