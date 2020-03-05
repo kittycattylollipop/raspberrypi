@@ -34,7 +34,7 @@ class Sensors():
         self.panAngles = [] #for servo 0
         self.tiltAngles = [] # for servo 1
 
-    def setServos(self, pans, tilts): #input two list of angles between 0 and 180
+    def setServoAngles(self, pans, tilts): #input two list of angles between 0 and 180
         self.panAngles = pans
         self.tiltAngles = tilts
 
@@ -45,7 +45,7 @@ class Sensors():
             ir.append(GPIO.input(self.IRs[i]))
 
         #get the ultrasonic distances
-        dist = np.empty([])
+        dist = np.empty([len(self.tiltAngles), len(self.panAngles)])
         for t in self.tiltAngles:
             for p in self.panAngles:
                 dist[]
