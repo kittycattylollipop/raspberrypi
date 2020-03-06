@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
+from matplotlib import patches as patches
 
 #compute patch stats
 def patch_stats(orgpatch, figsize=[12,6]):
@@ -56,16 +57,23 @@ def RGB_Ratio_Mask(img, ratioImg, rgbTh, ratioTh, viz=False, figsize=[12,6]):
 
 #input binary mask (0,1), or boolean mask (True/False)
 def maskLabeling(mask, sizeTh):
-    num_labels, labels_im = cv2.connectedComponents(np.uint8(mask)*255)
-    labCount = 0
+    # https://stackoverflow.com/questions/35854197/how-to-use-opencvs-connected-components-with-stats-in-python
+    # stats[label,COLUMN] include: left, top, width, height, area
+    #num_labels, labels_im = cv2.connectedComponents(np.uint8(mask)*255)
+    num_labels, labels_im, stats, centroids = cv2.connectedComponentsWithStats(np.uint8(mask)*255)    
+    labCount = 1
+    connStats = stats[0,:] #the background stats
+    connCent = centroids[0,:]
     for idx in range(1,num_labels):
-        if (labels_im==idx).sum() < sizeTh:
+        if stats[idx,4] < sizeTh:
             labels_im[labels_im==idx] = 0
         else: 
             labCount += 1
             labels_im[labels_im==idx] = labCount
+            connStats = np.vstack((connStats,stats[idx,:]))
+            connCent = np.vstack((connCent, centroids[idx,:]))            
             
-    return labCount, labels_im
+    return labCount, labels_im, connStats, connCent
 
 
 #show image map with different color 
@@ -83,3 +91,16 @@ def imshow_components(labels):
 
     plt.subplot(111),plt.imshow(labeled_img)
     
+def createRectangles(rectXYWH):
+    rects = []
+    for row in rectXYWH:
+        rects.append(patches.Rectangle((row[0],row[1]), row[2], row[3], linewidth = 1, edgecolor='r',fill=False))
+    return rects
+
+
+def plotRectangle(rectXYWH, ax, colorCh='r', lineW=1):
+    for row in rectXYWH:
+        ax.add_patch(patches.Rectangle((row[0],row[1]), row[2], row[3], linewidth = lineW, edgecolor=colorCh,fill=False))
+    
+
+                    
