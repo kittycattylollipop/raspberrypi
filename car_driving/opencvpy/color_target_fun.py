@@ -55,6 +55,44 @@ def RGB_Ratio_Mask(img, ratioImg, rgbTh, ratioTh, viz=False, figsize=[12,6]):
         
     return mask
 
+
+def normRGB(img, show_stats=False):
+    sumimg = img.sum(axis=2)
+    norm_rgb = img / np.dstack((sumimg,sumimg,sumimg))
+    name=['normR', 'normG', 'normB']
+    #compute stats 
+    if show_stats:
+        print(norm_rgb.shape)
+        print("    norm_rgb max: ", norm_rgb.max(axis=0).max(axis=0))
+        print("    norm_rgb min: ", norm_rgb.min(axis=0).min(axis=0))
+        plt.rcParams['figure.figsize'] = [12,6]
+        for i in range(norm_rgb.shape[2]):            
+            plt.subplot('1'+str(norm_rgb.shape[2])+str(i+1))
+            hist = plt.hist(norm_rgb[:,:,i].flat,bins=100)
+            plt.title(name[i])
+        plt.show()    
+
+    return norm_rgb
+
+
+
+def img_mask(img, th):
+    fimg = np.float32(img)
+    mask = np.ones(img.shape[0:-1], dtype=bool)
+    for i in range(img.shape[2]):
+        if th[i]>0:
+            mask = mask & (fimg[:,:,i] > th[i])
+        elif th[i]<0: 
+            mask = mask & (fimg[:,:,i] < np.abs(th[i]))        
+    return mask 
+
+def visMask(img, mask, figsize=[24,12]):
+    plt.rcParams['figure.figsize'] = figsize
+    plt.subplot(131),plt.imshow(img)
+    plt.subplot(132),plt.imshow(mask,'gray')
+    plt.subplot(133), plt.imshow(img * np.dstack((mask, mask, mask)))  
+    plt.show()
+        
 #input binary mask (0,1), or boolean mask (True/False)
 def maskLabeling(mask, sizeTh):
     # https://stackoverflow.com/questions/35854197/how-to-use-opencvs-connected-components-with-stats-in-python

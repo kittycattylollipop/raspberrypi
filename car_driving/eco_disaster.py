@@ -8,9 +8,10 @@ import time
 from PIL import Image
 import logging
 
+import Perception as perc
+
 logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-9s) %(message)s',)
-
 
 class EcoDisaster:
     def __init__(self):
