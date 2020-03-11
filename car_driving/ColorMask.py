@@ -3,65 +3,23 @@ import numpy as np
 from matplotlib import pyplot as plt
 from matplotlib import patches as patches
 
-#compute patch stats
-def patch_stats(orgpatch, figsize=[12,6]):
-    
-    plt.rcParams['figure.figsize'] = figsize
-    
-    patch = orgpatch.reshape(-1,3)
-    print(patch.shape)
-    print("    patch max: ", patch.max(axis=0))
-    print("    patch min: ", patch.min(axis=0))
-    r,g,b=0,1,2
-    ratio_r_g = patch[:,r]/(patch[:,g]+0.1)
-    print("    r/g max: ", ratio_r_g.max())
-    print("    r/g min: ", ratio_r_g.min())
-    plt.subplot(131,xscale='log'), plt.hist(ratio_r_g,bins=100), plt.title("r/g ratio")  
-    ratio_r_b = patch[:,r]/(patch[:,b]+0.1)
-    print("    r/b max: ", ratio_r_b.max())
-    print("    r/b min: ", ratio_r_b.min())
-    plt.subplot(132,xscale='log'), plt.hist(ratio_r_b,bins=100),  plt.title("r/b ratio")
-    ratio_g_b = patch[:,g]/(patch[:,b]+0.01)
-    print("    g/b max: ", ratio_g_b.max())
-    print("    g/b min: ", ratio_g_b.min())
-    plt.subplot(133,xscale='log'), plt.hist(ratio_g_b,bins=100), plt.title("g/b ratio")
-    plt.show()
-    
-    ratio_r_g.resize(orgpatch.shape[0:2])
-    ratio_r_b.resize(orgpatch.shape[0:2])
-    ratio_g_b.resize(orgpatch.shape[0:2])
-    return ratio_r_g, ratio_r_b, ratio_g_b
+# compute the ratio of RGB input
+# output channels: R/G, R/B, G/B
+def rgbRatioImage(image):
+    r, g, b = 0, 1, 2
+    ratioImg = np.zeros_like(image)
+    ratioImg[:, :, 0] = image[:, :, r] / (image[:, :, g] + 0.1)
+    ratioImg[:, :, 1] = image[:, :, r] / (image[:, :, b] + 0.1)
+    ratioImg[:, :, 2] = image[:, :, g] / (image[:, :, b] + 0.1)
 
+    return ratioImg
 
-def RGB_Ratio_Mask(img, ratioImg, rgbTh, ratioTh, viz=False, figsize=[24,12]):
-    fimg = np.float64(img)
-    mask = np.ones(img.shape[0:2], dtype=bool)
-    for i in range(img.shape[2]):
-        if rgbTh[i]>0:
-            mask = mask & (fimg[:,:,i] > rgbTh[i])
-        elif rgbTh[i]<0: 
-            mask = mask & (fimg[:,:,i] < np.abs(rgbTh[i]))
-        
-        if ratioTh[i]>0:
-            mask = mask & (ratioImg[:,:,i] > ratioTh[i])
-        elif ratioTh[i]<0: 
-            mask = mask & (ratioImg[:,:,i] < np.abs(ratioTh[i]))                        
-    
-    if viz:
-        plt.rcParams['figure.figsize'] = figsize
-        plt.subplot(131),plt.imshow(img)
-        plt.subplot(132),plt.imshow(mask,'gray')
-        plt.subplot(133), plt.imshow(img * np.dstack((mask, mask, mask)))
-        
-    return mask
-
-
-def normRGB(img, show_stats=False):
+def rgbNormImage(img, show_stats=False):
     sumimg = img.sum(axis=2)
     norm_rgb = img / np.dstack((sumimg,sumimg,sumimg))
-    name=['normR', 'normG', 'normB']
     #compute stats 
     if show_stats:
+        name = ['normR', 'normG', 'normB']
         print(norm_rgb.shape)
         print("    norm_rgb max: ", norm_rgb.max(axis=0).max(axis=0))
         print("    norm_rgb min: ", norm_rgb.min(axis=0).min(axis=0))
@@ -70,10 +28,8 @@ def normRGB(img, show_stats=False):
             plt.subplot('1'+str(norm_rgb.shape[2])+str(i+1))
             hist = plt.hist(norm_rgb[:,:,i].flat,bins=100)
             plt.title(name[i])
-        plt.show()    
-
+        plt.show()
     return norm_rgb
-
 
 
 def img_mask(img, th):
@@ -82,9 +38,15 @@ def img_mask(img, th):
     for i in range(img.shape[2]):
         if th[i]>0:
             mask = mask & (fimg[:,:,i] > th[i])
-        elif th[i]<0: 
-            mask = mask & (fimg[:,:,i] < np.abs(th[i]))        
-    return mask 
+        elif th[i]<0:
+            mask = mask & (fimg[:,:,i] < np.abs(th[i]))
+    return mask
+
+def img_in_range(img, low, high):
+    mask = img_mask(img, low) + img_mask(img, -high)
+    return mask
+
+
 
 def visMask(img, mask, figsize=[24,12]):
     plt.rcParams['figure.figsize'] = figsize
@@ -92,7 +54,7 @@ def visMask(img, mask, figsize=[24,12]):
     plt.subplot(132),plt.imshow(mask,'gray')
     plt.subplot(133), plt.imshow(img * np.dstack((mask, mask, mask)))  
     plt.show()
-        
+
 #input binary mask (0,1), or boolean mask (True/False)
 def maskLabeling(mask, sizeTh):
     # https://stackoverflow.com/questions/35854197/how-to-use-opencvs-connected-components-with-stats-in-python
@@ -114,6 +76,9 @@ def maskLabeling(mask, sizeTh):
     return labCount, labels_im, connStats, connCent
 
 
+#############################################
+#  Visualization
+##############################################
 #show image map with different color 
 def imshow_components(labels):
     # Map component labels to hue val
@@ -128,17 +93,7 @@ def imshow_components(labels):
     labeled_img[label_hue==0] = 0
 
     plt.subplot(111),plt.imshow(labeled_img)
-    
-def createRectangles(rectXYWH):
-    rects = []
-    for row in rectXYWH:
-        rects.append(patches.Rectangle((row[0],row[1]), row[2], row[3], linewidth = 1, edgecolor='r',fill=False))
-    return rects
-
 
 def plotRectangle(rectXYWH, ax, colorCh='r', lineW=1):
     for row in rectXYWH:
         ax.add_patch(patches.Rectangle((row[0],row[1]), row[2], row[3], linewidth = lineW, edgecolor=colorCh,fill=False))
-    
-
-                    
