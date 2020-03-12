@@ -22,7 +22,6 @@ class SensorData:
         self.USread = None
         self.servoPangle = None
         self.servoTangle = None
-        self.lock = threading.Lock()
 
 class Sensors:
     def __init__(self):
@@ -49,13 +48,14 @@ class Sensors:
 
         # data and locks
         self.data = SensorData()
+        self.data_lock = threading.Lock()
 
     def readUltrasonic(self):
         # set servo to the home position
         self.servo.setServoPwm('0', 90)
         self.servo.setServoPwm('1', 90)
         dist = self.ultrasonic.get_distance()
-        with self.data.lock:
+        with self.data_lock:
             self.data.servoPangle = [90]
             self.data.servoTangle = [90]
             self.data.USread = [dist]
@@ -70,15 +70,18 @@ class Sensors:
 
     def sensorRead(self, us_full_angles=False):
         # get the IR inputs
-        ir = []
+        ir = np.zeros(3, dtype=bool)
         for i in range(3):
-            ir.append(GPIO.input(self.IRs[i]))
+            ir[i] = GPIO.input(self.IRs[i])
 
         # get the ultrasonic distances from different angles
         dist = []
         if us_full_angles:
             # cancel timer
             self.ultrasonicTimer.cancel()
+            time.sleep(0.1)
+            while self.ultrasonicTimer.is_alive():
+                time.sleep(0.01)
             dist = np.zeros([len(self.tiltAngles), len(self.panAngles)])
             for t in range(len(self.tiltAngles)):
                 # move the servo
@@ -89,10 +92,6 @@ class Sensors:
                     time.sleep(0.2)
                     # get the distance
                     dist[t,p] = self.ultrasonic.get_distance()  # Get the value
-                    
-            # restart the timer
-            self.ultrasonicTimer = threading.Timer(0.2, self.readUltrasonic)
-            self.ultrasonicTimer.start()
 
         # prepare the data to return
         self.data.IRread = ir
@@ -101,4 +100,12 @@ class Sensors:
             self.data.servoTangle = self.tiltAngles
             self.data.USread = dist
 
-        return self.data
+            # restart the timer
+            self.ultrasonicTimer = threading.Timer(0.2, self.readUltrasonic)
+            self.ultrasonicTimer.start()
+
+        data = SensorData()
+        with self.data_lock:
+            data = self.data
+
+        return data

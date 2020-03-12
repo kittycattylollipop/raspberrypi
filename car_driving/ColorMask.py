@@ -42,6 +42,7 @@ def img_mask(img, th):
             mask = mask & (fimg[:,:,i] < np.abs(th[i]))
     return mask
 
+
 def img_in_range(img, low, high):
     mask = img_mask(img, low) + img_mask(img, -high)
     return mask
@@ -55,21 +56,23 @@ def visMask(img, mask, figsize=[24,12]):
     plt.subplot(133), plt.imshow(img * np.dstack((mask, mask, mask)))  
     plt.show()
 
+
 #input binary mask (0,1), or boolean mask (True/False)
 def maskLabeling(mask, sizeTh):
     # https://stackoverflow.com/questions/35854197/how-to-use-opencvs-connected-components-with-stats-in-python
     # stats[label,COLUMN] include: left, top, width, height, area
-    #num_labels, labels_im = cv2.connectedComponents(np.uint8(mask)*255)
+    # centroid include: x, y
     num_labels, labels_im, stats, centroids = cv2.connectedComponentsWithStats(np.uint8(mask)*255)    
-    labCount = 1
-    connStats = stats[0,:] #the background stats
-    connCent = centroids[0,:]
-    for idx in range(1,num_labels):
-        if stats[idx,4] < sizeTh:
-            labels_im[labels_im==idx] = 0
+    labCount = 0
+    connStats = np.empty((0, len(stats[0, :])))
+    connCent = np.empty((0, len(centroids[0, :])))
+
+    for idx in range(1, num_labels):
+        if stats[idx, 4] < sizeTh:
+            labels_im[labels_im == idx] = 0
         else: 
             labCount += 1
-            labels_im[labels_im==idx] = labCount
+            labels_im[labels_im == idx] = labCount
             connStats = np.vstack((connStats,stats[idx,:]))
             connCent = np.vstack((connCent, centroids[idx,:]))            
             

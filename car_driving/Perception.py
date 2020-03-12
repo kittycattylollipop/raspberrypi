@@ -12,10 +12,32 @@ import cv2
 import Sensors as ss
 import ColorMask as cmf
 
-#a data class for the world
+
+# a data class for the world
 class ArenaFloor:
+
+    COLOR_RED = "Red"
+    COLOR_GREEN = "Green"
+    COLOR_BLUE = "Blue"
+    COLOR_YELLOW = "Yellow"
+    COLOR_BLACK = "Black"
+
     def __init__(self):
-        pass
+        self.arena_ceiling = 0
+        self.dist_to_obj = -np.ones(4)   # front, left, back, right
+        self.barrel_in_center_zone = False
+        self.center_barrel_color = ""
+        self.center_barrel = []
+        self.barrel_in_arm = False
+        self.blue_zone_at_center = False
+        self.blue_zone = []
+        self.yellow_zone_at_center = False
+        self.yellow_zone = []
+        self.at_blue_zone = False
+        self.at_yellow_zone = False
+        self.red_barrels_in_view = []
+        self.green_barrels_in_view = []
+
 
 class ColorZones:
     def __init__(self):
@@ -25,10 +47,20 @@ class ColorZones:
         self.yellowZones = None
         self.blackZones = None
 
+
 class Perception:
     def __init__(self):
         self.sensors = ss.Sensors()
-        self.sensors.setServoAngles([0, 90, 180], [0])
+        self.sensors.setServoAngles([90, 0, 180], [90])
+        self.servoPositons = ['center', 'left', 'right']
+
+        # TODO: algorithm parameters
+        self.para_img_ctr_minX = 0.3
+        self.para_img_ctr_maxX = 0.7
+        self.para_barrel_width_th = 0.4
+
+        # internal data
+        self.arena_floor = ArenaFloor()
 
     # process for one step
     def step(self, image):
@@ -39,13 +71,139 @@ class Perception:
         hsvImg = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
         ratioImg = cmf.rgbRatioImage()
         normImg = cmf.rgbNormImage()
-        colorzones = self.colorAnalysis(image, ratioImg, normImg, hsvImg)
+
+        color_zones = self.colorAnalysis(image, ratioImg, normImg, hsvImg)
 
         # inference
-        self.inference(ss_out, colorzones)
+        self.inference(image, ss_out, color_zones)
 
-    def inference(self, ss_out, color_zones):
-        pass
+        return self.arena_floor, color_zones
+
+    # the function to inference the world from the sensor inputs
+    def inference(self, image, ss_out, color_zones):
+        im_w, im_h = image.shape[0:2]
+
+        # set the distance to objects
+        self.arena_floor.dist_to_obj[0] = ss_out.USread[0]
+
+        # find the top of the arena by check black zone, yellow, or blue zone
+        self.arena_floor.arena_ceiling = self.find_arena_ceiling(color_zones, im_h)
+
+        # clean up all outside zones
+        color_zones.blackZones = self.cleanup_zones(self.arena_floor.arena_ceiling, color_zones.blackZones)
+        color_zones.yellowZones = self.cleanup_zones(self.arena_floor.arena_ceiling, color_zones.yellowZones)
+        color_zones.blueZones = self.cleanup_zones(self.arena_floor.arena_ceiling, color_zones.blueZones)
+        color_zones.greenZones = self.cleanup_zones(self.arena_floor.arena_ceiling, color_zones.greenZones)
+        color_zones.redZones = self.cleanup_zones(self.arena_floor.arena_ceiling, color_zones.redZones)
+
+        self.arena_floor.red_barrels_in_view = color_zones.redZones
+        self.arena_floor.green_barrels_in_view = color_zones.greenZones
+
+        # check if image center is occupied by either red or green
+        red_in_zone, red_at_center = self.within_image_center(color_zones.redZones, im_w, im_h)
+        if len(red_at_center) > 0: # red barrel at center
+            self.arena_floor.barrel_in_center_zone = True
+            self.arena_floor.center_barrel = red_at_center
+            self.arena_floor.center_barrel_color = ArenaFloor.COLOR_RED
+        else:
+            green_in_zone, green_at_center =  self.within_image_center(color_zones.greenZones, im_w, im_h)
+            if len(green_at_center) > 0:  # green target at center
+                self.arena_floor.barrel_in_center_zone = True
+                self.arena_floor.center_barrel = green_at_center
+                self.arena_floor.center_barrel_color = ArenaFloor.COLOR_GREEN
+            elif red_in_zone or green_in_zone:
+                self.arena_floor.barrel_in_center_zone = True
+                self.arena_floor.center_barrel = []
+                self.arena_floor.center_barrel_color = ""
+            else:
+                self.arena_floor.barrel_in_center_zone = False
+                self.arena_floor.center_barrel = []
+                self.arena_floor.center_barrel_color = ""
+
+        # check if barrel is in arm
+        if len(self.arena_floor.center_barrel)>0 and (self.arena_floor.center_barrel[2] > self.para_barrel_width_th
+                                                      * im_w):
+            self.arena_floor.barrel_in_arm = True
+        else:
+            self.arena_floor.barrel_in_arm = False
+
+        # check if blue zone is in view and at the center
+        if color_zones.blueZones.shape[0]>0:
+            left = np.min(color_zones.blueZones[0, :])
+            top = np.min(color_zones.blueZones[1, :])
+            right = np.max(color_zones.blueZones[0, :] + color_zones.blueZones[2, :]-1)
+            bottom = np.max(color_zones.blueZones[1, :] + color_zones.blueZones[3, :]-1)
+            self.arena_floor.blue_zone = np.array([left, top, right-left+1, bottom-top+1, (right-left+1)*bottom-top+1,
+                                                   (left+right)/2, (top+bottom)/2])
+            if (left < im_w/2) and (right > im_w/2):
+                self.arena_floor.blue_zone_at_center = True
+            else:
+                self.arena_floor.blue_zone_at_center = False
+        else:
+            self.arena_floor.blue_zone_at_center = False
+            self.arena_floor.blue_zone = []
+
+        # check if at blue zone
+        if self.arena_floor.blue_zone_at_center and ss_out.IRread.sum()>=2:
+            self.arena_floor.at_blue_zone = True
+        else:
+            self.arena_floor.at_blue_zone = False
+
+        # check if yellow zone is in view and at the center
+        if color_zones.yellowZones.shape[0] > 0:
+            left = np.min(color_zones.yellowZones[0, :])
+            top = np.min(color_zones.yellowZones[1, :])
+            right = np.max(color_zones.yellowZones[0, :] + color_zones.yellowZones[2, :] - 1)
+            bottom = np.max(color_zones.yellowZones[1, :] + color_zones.yellowZones[3, :] - 1)
+            self.arena_floor.yellow_zone = np.array(
+                [left, top, right - left + 1, bottom - top + 1, (right - left + 1) * bottom - top + 1,
+                 (left + right) / 2, (top + bottom) / 2])
+            if (left < im_w / 2) and (right > im_w / 2):
+                self.arena_floor.yellow_zone_at_center = True
+            else:
+                self.arena_floor.yellow_zone_at_center = False
+        else:
+            self.arena_floor.yellow_zone_at_center = False
+            self.arena_floor.yellow_zone = []
+
+        # check if at blue zone
+        if self.arena_floor.yellow_zone_at_center and ss_out.IRread.sum() >= 2:
+            self.arena_floor.at_yellow_zone = True
+        else:
+            self.arena_floor.at_yellow_zone = False
+
+
+
+    # clean up the zones outside of arena
+    def cleanup_zones(self, ceiling_top, zones):
+        zones_in = zones[ (zones[:,6] > ceiling_top), :]
+        return zones_in
+
+    def find_arena_ceiling(self, color_zones, im_h):
+        ceiling = 0
+        for zone in color_zones.blueZones:
+            ceiling = np.max(zone[1], ceiling)
+        for zone in color_zones.yellowZones:
+            ceiling = np.max(zone[1], ceiling)
+        for zone in color_zones.blackZones:
+            ceiling = np.max(zone[1], ceiling)
+        return ceiling
+
+    def within_image_center(self, zones, imW, imH):
+        in_zone = False
+        left = self.para_img_ctr_minX * imW
+        right = self.para_img_ctr_maxX * imW
+
+        center_zone = []
+        #get zone index having the largest overlap with the center zone
+        overlap = np.minimum(zones[:,0]+zones[:,2]-1, right) - np.maximum(zones[:,0],left)
+        idx = np.argmax(overlap)
+        if overlap(idx) > 0:
+            in_zone = True
+            z = zones[idx,:]
+            if (z[0] < imW/2) and (z[0]+z[2] > imW/2):
+                center_zone = z
+        return in_zone, center_zone
 
 
     #get red, green barrels, get blue and yellow zones, get black walls
