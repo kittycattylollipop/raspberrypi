@@ -15,7 +15,7 @@ def rgbRatioImage(image):
     return ratioImg
 
 def rgbNormImage(img, show_stats=False):
-    sumimg = img.sum(axis=2)
+    sumimg = img.sum(axis=2)+0.01
     norm_rgb = img / np.dstack((sumimg,sumimg,sumimg))
     #compute stats 
     if show_stats:

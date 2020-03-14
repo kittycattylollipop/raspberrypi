@@ -9,7 +9,7 @@ import logging
 import numpy as np
 import cv2
 
-import Sensors as ss
+#import Sensors as ss
 import ColorMask as cmf
 
 
@@ -49,10 +49,12 @@ class ColorZones:
 
 
 class Perception:
-    def __init__(self):
-        self.sensors = ss.Sensors()
-        self.sensors.setServoAngles([90, 0, 180], [90])
-        self.servoPositons = ['center', 'left', 'right']
+    def __init__(self, sensor_on=True):
+        self.sensor_on = sensor_on
+        if self.sensor_on:
+            self.sensors = ss.Sensors()
+            self.sensors.setServoAngles([90, 0, 180], [90])
+            self.servoPositons = ['center', 'left', 'right']
 
         # TODO: algorithm parameters
         self.para_img_ctr_minX = 0.3
@@ -65,12 +67,15 @@ class Perception:
     # process for one step
     def step(self, image):
         # get the sensor inputs
-        ss_out = self.sensors.sensorRead(False) #don't read all angles
+        if self.sensor_on:
+            ss_out = self.sensors.sensorRead(False)  # don't read all angles
+        else:
+            ss_out = None
 
         # analyze image, to get all the zone locations
         hsvImg = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-        ratioImg = cmf.rgbRatioImage()
-        normImg = cmf.rgbNormImage()
+        ratioImg = cmf.rgbRatioImage(image)
+        normImg = cmf.rgbNormImage(image)
 
         color_zones = self.colorAnalysis(image, ratioImg, normImg, hsvImg)
 
@@ -84,7 +89,8 @@ class Perception:
         im_w, im_h = image.shape[0:2]
 
         # set the distance to objects
-        self.arena_floor.dist_to_obj[0] = ss_out.USread[0]
+        if self.sensor_on:
+            self.arena_floor.dist_to_obj[0] = ss_out.USread[0]
 
         # find the top of the arena by check black zone, yellow, or blue zone
         self.arena_floor.arena_ceiling = self.find_arena_ceiling(color_zones, im_h)
@@ -129,11 +135,11 @@ class Perception:
 
         # check if blue zone is in view and at the center
         if color_zones.blueZones.shape[0]>0:
-            left = np.min(color_zones.blueZones[0, :])
-            top = np.min(color_zones.blueZones[1, :])
-            right = np.max(color_zones.blueZones[0, :] + color_zones.blueZones[2, :]-1)
-            bottom = np.max(color_zones.blueZones[1, :] + color_zones.blueZones[3, :]-1)
-            self.arena_floor.blue_zone = np.array([left, top, right-left+1, bottom-top+1, (right-left+1)*bottom-top+1,
+            left = np.min(color_zones.blueZones[:, 0])
+            top = np.min(color_zones.blueZones[:, 1])
+            right = np.max(color_zones.blueZones[:, 0] + color_zones.blueZones[:, 2]-1)
+            bottom = np.max(color_zones.blueZones[:, 1] + color_zones.blueZones[:, 3]-1)
+            self.arena_floor.blue_zone = np.array([left, top, right-left+1, bottom-top+1, (right-left+1)*(bottom-top+1),
                                                    (left+right)/2, (top+bottom)/2])
             if (left < im_w/2) and (right > im_w/2):
                 self.arena_floor.blue_zone_at_center = True
@@ -144,10 +150,11 @@ class Perception:
             self.arena_floor.blue_zone = []
 
         # check if at blue zone
-        if self.arena_floor.blue_zone_at_center and ss_out.IRread.sum()>=2:
+        if self.sensor_on and self.arena_floor.blue_zone_at_center and ss_out.IRread.sum() >= 2:
             self.arena_floor.at_blue_zone = True
         else:
             self.arena_floor.at_blue_zone = False
+
 
         # check if yellow zone is in view and at the center
         if color_zones.yellowZones.shape[0] > 0:
@@ -167,27 +174,27 @@ class Perception:
             self.arena_floor.yellow_zone = []
 
         # check if at blue zone
-        if self.arena_floor.yellow_zone_at_center and ss_out.IRread.sum() >= 2:
+
+        if self.sensor_on and self.arena_floor.yellow_zone_at_center and ss_out.IRread.sum() >= 2:
             self.arena_floor.at_yellow_zone = True
         else:
             self.arena_floor.at_yellow_zone = False
 
 
-
     # clean up the zones outside of arena
     def cleanup_zones(self, ceiling_top, zones):
-        zones_in = zones[ (zones[:,6] > ceiling_top), :]
+        zones_in = zones[(zones[:,6] > ceiling_top), :]
         return zones_in
 
     def find_arena_ceiling(self, color_zones, im_h):
         ceiling = 0
         for zone in color_zones.blueZones:
-            ceiling = np.max(zone[1], ceiling)
+            ceiling = np.maximum(zone[1], ceiling)
         for zone in color_zones.yellowZones:
-            ceiling = np.max(zone[1], ceiling)
+            ceiling = np.maximum(zone[1], ceiling)
         for zone in color_zones.blackZones:
-            ceiling = np.max(zone[1], ceiling)
-        return ceiling
+            ceiling = np.maximum(zone[1], ceiling)
+        return np.int(ceiling)
 
     def within_image_center(self, zones, imW, imH):
         in_zone = False
@@ -195,10 +202,12 @@ class Perception:
         right = self.para_img_ctr_maxX * imW
 
         center_zone = []
+        if zones.size==0:
+            return in_zone, center_zone
         #get zone index having the largest overlap with the center zone
         overlap = np.minimum(zones[:,0]+zones[:,2]-1, right) - np.maximum(zones[:,0],left)
         idx = np.argmax(overlap)
-        if overlap(idx) > 0:
+        if overlap[idx] > 0:
             in_zone = True
             z = zones[idx,:]
             if (z[0] < imW/2) and (z[0]+z[2] > imW/2):
@@ -237,7 +246,7 @@ class Perception:
 
         # connected components
         sizeTh = 50
-        labCount, labels_im, connStats, connCent = cmf.maskLabeling((mask, sizeTh))
+        labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
 
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
@@ -260,7 +269,7 @@ class Perception:
 
         # connected components
         sizeTh = 50
-        labCount, labels_im, connStats, connCent = cmf.maskLabeling((mask, sizeTh))
+        labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
 
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
@@ -272,7 +281,7 @@ class Perception:
 
         # connected components
         sizeTh = 500
-        labCount, labels_im, connStats, connCent = cmf.maskLabeling((mask, sizeTh))
+        labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
 
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
@@ -285,7 +294,7 @@ class Perception:
 
         # connected components
         sizeTh = 500
-        labCount, labels_im, connStats, connCent = cmf.maskLabeling((mask, sizeTh))
+        labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
 
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
@@ -298,7 +307,7 @@ class Perception:
 
         # connected components
         sizeTh = 1000
-        labCount, labels_im, connStats, connCent = cmf.maskLabeling((mask, sizeTh))
+        labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
 
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
