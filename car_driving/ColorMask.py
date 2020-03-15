@@ -7,7 +7,7 @@ from matplotlib import patches as patches
 # output channels: R/G, R/B, G/B
 def rgbRatioImage(image):
     r, g, b = 0, 1, 2
-    ratioImg = np.zeros_like(image)
+    ratioImg = np.zeros_like(image, dtype=float)
     ratioImg[:, :, 0] = image[:, :, r] / (image[:, :, g] + 0.1)
     ratioImg[:, :, 1] = image[:, :, r] / (image[:, :, b] + 0.1)
     ratioImg[:, :, 2] = image[:, :, g] / (image[:, :, b] + 0.1)
@@ -51,6 +51,7 @@ def img_in_range(img, low, high):
 
 def visMask(img, mask, figsize=[24,12]):
     plt.rcParams['figure.figsize'] = figsize
+    plt.figure
     plt.subplot(131),plt.imshow(img)
     plt.subplot(132),plt.imshow(mask,'gray')
     plt.subplot(133), plt.imshow(img * np.dstack((mask, mask, mask)))  
@@ -83,19 +84,37 @@ def maskLabeling(mask, sizeTh):
 #  Visualization
 ##############################################
 #show image map with different color 
-def imshow_components(labels):
+def imshow_components(labels, fig_name="labels"):
     # Map component labels to hue val
     label_hue = np.uint8(179*labels/np.max(labels))
     blank_ch = 255*np.ones_like(label_hue)
     labeled_img = cv2.merge([label_hue, blank_ch, blank_ch])
 
     # cvt to BGR for display
-    labeled_img = cv2.cvtColor(labeled_img, cv2.COLOR_HSV2RGB)
+    #labeled_img = cv2.cvtColor(labeled_img, cv2.COLOR_HSV2RGB)
+    labeled_img = cv2.cvtColor(labeled_img, cv2.COLOR_HSV2BGR)
+    labeled_img[label_hue == 0] = 0
+    cv2.imshow(fig_name, labeled_img)
+    #cv2.waitKey(0)
 
     # set bg label to black
-    labeled_img[label_hue==0] = 0
+    #plt.figure
+    #plt.subplot(111),plt.imshow(labeled_img)
+    #plt.show()
 
-    plt.subplot(111),plt.imshow(labeled_img)
+
+def draw_rect_cv2(bgrimage, rects_xywh, color_bgr=(0, 0, 255), thickness=1):
+    if len(rects_xywh)==0:
+        return
+    if len(rects_xywh.shape)==1:
+        rects = rects_xywh.reshape(-1,len(rects_xywh)).astype(np.int)
+    else:
+        rects = rects_xywh.astype(np.int)
+    for row in rects:
+        ul = tuple(row[0:2])
+        br = tuple(row[0:2]+row[2:4]-1)
+        cv2.rectangle(bgrimage, ul, br, color_bgr, thickness)
+
 
 def plotRectangle(rectXYWH, ax, colorCh='r', lineW=1):
     for row in rectXYWH:

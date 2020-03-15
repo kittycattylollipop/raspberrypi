@@ -57,7 +57,7 @@ def RGB_Ratio_Mask(img, ratioImg, rgbTh, ratioTh, viz=False, figsize=[24,12]):
 
 
 def normRGB(img, show_stats=False):
-    sumimg = img.sum(axis=2)
+    sumimg = img.sum(axis=2)+0.01
     norm_rgb = img / np.dstack((sumimg,sumimg,sumimg))
     name=['normR', 'normG', 'normB']
     #compute stats 

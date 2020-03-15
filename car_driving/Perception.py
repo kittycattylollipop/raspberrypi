@@ -38,6 +38,23 @@ class ArenaFloor:
         self.red_barrels_in_view = []
         self.green_barrels_in_view = []
 
+    def __str__(self):
+        string = "Arena Floor states: " \
+            + "\n  arena_ceiling: % s " % (self.arena_ceiling) \
+            + "\n  dist_to_obj: %s " % (self.dist_to_obj) \
+            + "\n  barrel_in_center_zone: %s " % (self.barrel_in_center_zone) \
+            + "\n  center_barrel_color: %s " % (self.center_barrel_color) \
+            + "\n  center_barrel: %s " % (self.center_barrel) \
+            + "\n  barrel_in_arm: %s " % (self.barrel_in_arm) \
+            + "\n  blue_zone_at_center: %s " % (self.blue_zone_at_center) \
+            + "\n  blue_zone: %s " % (self.blue_zone) \
+            + "\n  yellow_zone_at_center: %s " % (self.yellow_zone_at_center) \
+            + "\n  yellow_zone: %s " % (self.yellow_zone) \
+            + "\n  at_blue_zone: %s " % (self.at_blue_zone) \
+            + "\n  at_yellow_zone: %s " % (self.at_yellow_zone) \
+            + "\n  red_barrels_in_view: %s " % (self.red_barrels_in_view) \
+            + "\n  green_barrels_in_view: %s " % (self.green_barrels_in_view)
+        return string
 
 class ColorZones:
     def __init__(self):
@@ -63,6 +80,7 @@ class Perception:
 
         # internal data
         self.arena_floor = ArenaFloor()
+        self.color_zones = ColorZones()
 
     # process for one step
     def step(self, image):
@@ -77,16 +95,16 @@ class Perception:
         ratioImg = cmf.rgbRatioImage(image)
         normImg = cmf.rgbNormImage(image)
 
-        color_zones = self.colorAnalysis(image, ratioImg, normImg, hsvImg)
+        self.color_zones = self.colorAnalysis(image, ratioImg, normImg, hsvImg)
 
         # inference
-        self.inference(image, ss_out, color_zones)
+        self.inference(image, ss_out, self.color_zones)
 
-        return self.arena_floor, color_zones
+        return self.arena_floor, self.color_zones
 
     # the function to inference the world from the sensor inputs
     def inference(self, image, ss_out, color_zones):
-        im_w, im_h = image.shape[0:2]
+        im_h, im_w = image.shape[0:2]
 
         # set the distance to objects
         if self.sensor_on:
@@ -155,15 +173,14 @@ class Perception:
         else:
             self.arena_floor.at_blue_zone = False
 
-
         # check if yellow zone is in view and at the center
         if color_zones.yellowZones.shape[0] > 0:
-            left = np.min(color_zones.yellowZones[0, :])
-            top = np.min(color_zones.yellowZones[1, :])
-            right = np.max(color_zones.yellowZones[0, :] + color_zones.yellowZones[2, :] - 1)
-            bottom = np.max(color_zones.yellowZones[1, :] + color_zones.yellowZones[3, :] - 1)
+            left = np.min(color_zones.yellowZones[:, 0])
+            top = np.min(color_zones.yellowZones[:, 1])
+            right = np.max(color_zones.yellowZones[:, 0] + color_zones.yellowZones[:, 2] - 1)
+            bottom = np.max(color_zones.yellowZones[:, 1] + color_zones.yellowZones[:, 3] - 1)
             self.arena_floor.yellow_zone = np.array(
-                [left, top, right - left + 1, bottom - top + 1, (right - left + 1) * bottom - top + 1,
+                [left, top, right - left + 1, bottom - top + 1, (right - left + 1) * (bottom - top + 1),
                  (left + right) / 2, (top + bottom) / 2])
             if (left < im_w / 2) and (right > im_w / 2):
                 self.arena_floor.yellow_zone_at_center = True
@@ -173,8 +190,7 @@ class Perception:
             self.arena_floor.yellow_zone_at_center = False
             self.arena_floor.yellow_zone = []
 
-        # check if at blue zone
-
+        # check if at yellow zone
         if self.sensor_on and self.arena_floor.yellow_zone_at_center and ss_out.IRread.sum() >= 2:
             self.arena_floor.at_yellow_zone = True
         else:
@@ -241,12 +257,15 @@ class Perception:
         # use Ratio
         if useRatio:
             ratioTh = [2, 2, 0]
-            rgbTh = [0, -50, -50]
+            rgbTh = [50, -50, -50]
             mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh)
 
         # connected components
-        sizeTh = 50
+        sizeTh = 80
         labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
+
+        # visualize
+        cmf.imshow_components(labels_im, "red")
 
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
@@ -256,7 +275,7 @@ class Perception:
 
         # use Ratio
         ratioTh = np.array([-0.2, 0, 3])
-        rgbTh = np.array([-30, 30, -30])
+        rgbTh = np.array([-30, 50, -30])
         ratio_mask =  cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh)
 
         #use rgb norm
@@ -266,10 +285,16 @@ class Perception:
             norm_mask = cmf.img_mask(normImg, normRGBTh) & cmf.img_mask(image, imgRGBTh)
 
         mask = hsv_mask + ratio_mask
+        #cmf.visMask(image, hsv_mask)
+        #cmf.visMask(image, ratio_mask)
+        #cmf.visMask(image, mask)
 
         # connected components
-        sizeTh = 50
+        sizeTh = 120
         labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
+
+        # visualize
+        cmf.imshow_components(labels_im, "green")
 
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
@@ -283,18 +308,24 @@ class Perception:
         sizeTh = 500
         labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
 
+        # visualize
+        cmf.imshow_components(labels_im, "blue")
+
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
     def getYellow(self, image, ratioImg, normImg, hsvImg):
         # use Ratio
         ratioTh1 = np.array([-1, 3, 3])
-        ratioTh2 = np.array([0.9, 0, 0])
+        ratioTh2 = np.array([0.85, 0, 0])
         rgbTh = np.array([100, 100, -60])
         mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh1) & cmf.img_mask(ratioImg, ratioTh2)
-
+        #cmf.visMask(image, mask)
         # connected components
         sizeTh = 500
         labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
+
+        # visualize
+        cmf.imshow_components(labels_im, "yellow")
 
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
@@ -308,6 +339,9 @@ class Perception:
         # connected components
         sizeTh = 1000
         labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
+
+        #visualize
+        cmf.imshow_components(labels_im, "black")
 
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
