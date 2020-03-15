@@ -78,6 +78,8 @@ class Perception:
         self.para_img_ctr_maxX = 0.7
         self.para_barrel_width_th = 0.4
 
+        self.para_ceiling_ub = 0.75
+
         # internal data
         self.arena_floor = ArenaFloor()
         self.color_zones = ColorZones()
@@ -205,11 +207,17 @@ class Perception:
     def find_arena_ceiling(self, color_zones, im_h):
         ceiling = 0
         for zone in color_zones.blueZones:
-            ceiling = np.maximum(zone[1], ceiling)
+            if (zone[1] < self.para_ceiling_ub * im_h)  & (zone[1] > ceiling):
+                ceiling = zone[1]
+        #maxblueZone = np.argmax(color_zones.blueZones[:, 4])
+        #if color_zones.blueZones[maxblueZone, 1] < self.para_ceiling_ub * im_h:
+        #    ceiling = np.maximum(color_zones.blueZones[maxblueZone, 1], ceiling)
         for zone in color_zones.yellowZones:
-            ceiling = np.maximum(zone[1], ceiling)
+            if (zone[1] < self.para_ceiling_ub * im_h) & (zone[1] > ceiling):
+                ceiling = zone[1]
         for zone in color_zones.blackZones:
-            ceiling = np.maximum(zone[1], ceiling)
+            if (zone[1] < self.para_ceiling_ub * im_h) & (zone[1] > ceiling):
+                ceiling = zone[1]
         return np.int(ceiling)
 
     def within_image_center(self, zones, imW, imH):
@@ -271,11 +279,13 @@ class Perception:
 
     def getGreen(self, image, ratioImg, normImg, hsvImg):
         # use HSV image
-        hsv_mask = cv2.inRange(hsvImg, (55, 120, 60), (70, 255, 255)).astype('bool')
+        #hsv_mask = cv2.inRange(hsvImg, (55, 120, 60), (70, 255, 255)).astype('bool')
+        hsv_mask = cv2.inRange(hsvImg, (55, 120, 60), (75, 255, 255)).astype('bool')
 
-        # use Ratio
+        # use Ratio (for dark green)
         ratioTh = np.array([-0.2, 0, 3])
-        rgbTh = np.array([-30, 50, -30])
+        #rgbTh = np.array([-30, 50, -30])
+        rgbTh = np.array([-20, 50, -20])
         ratio_mask =  cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh)
 
         #use rgb norm
@@ -285,9 +295,9 @@ class Perception:
             norm_mask = cmf.img_mask(normImg, normRGBTh) & cmf.img_mask(image, imgRGBTh)
 
         mask = hsv_mask + ratio_mask
-        #cmf.visMask(image, hsv_mask)
-        #cmf.visMask(image, ratio_mask)
-        #cmf.visMask(image, mask)
+        #cmf.visMask_cv(hsv_mask.astype('uint8')*255,'green-hsv')
+        #cmf.visMask_cv(ratio_mask.astype('uint8')*255,'green-ratio')
+        #cmf.visMask_cv(mask.astype('uint8')*255,'green-mask')
 
         # connected components
         sizeTh = 120
@@ -298,14 +308,25 @@ class Perception:
 
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
+
     def getBlue(self, image, ratioImg, normImg, hsvImg):
+
+        # use HSV image
+        #hsv_mask = cv2.inRange(hsvImg, (100, 50, 50), (120, 255, 255)).astype('bool')
+        hsv_mask = cv2.inRange(hsvImg, (100, 50, 50), (130, 255, 255)).astype('bool')
+
         # use Ratio
-        ratioTh = np.array([-0.5, -0.2, -0.5])
+        ratioTh = np.array([-0.5, -0.2, -0.6])
         rgbTh = np.array([-20, -50, 40])
-        mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh)
+        ratio_mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh)
+
+        mask = hsv_mask + ratio_mask
+        cmf.visMask_cv(hsv_mask.astype('uint8')*255,'blue-hsv')
+        cmf.visMask_cv(ratio_mask.astype('uint8')*255,'blue-ratio')
+        cmf.visMask_cv(mask.astype('uint8') * 255, 'blue-mask')
 
         # connected components
-        sizeTh = 500
+        sizeTh = 800
         labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
 
         # visualize
@@ -321,7 +342,7 @@ class Perception:
         mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh1) & cmf.img_mask(ratioImg, ratioTh2)
         #cmf.visMask(image, mask)
         # connected components
-        sizeTh = 500
+        sizeTh = 800
         labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
 
         # visualize
@@ -332,6 +353,8 @@ class Perception:
 
     def getBlack(self, image, ratioImg, normImg, hsvImg):
         # use Ratio
+        #ratioTh = np.array([-0.6, 0, 1.5])
+        #rgbTh = np.array([-10, -15, -10])
         ratioTh = np.array([-0.6, 0, 1.5])
         rgbTh = np.array([-10, -15, -10])
         mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh)

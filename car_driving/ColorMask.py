@@ -48,16 +48,6 @@ def img_in_range(img, low, high):
     return mask
 
 
-
-def visMask(img, mask, figsize=[24,12]):
-    plt.rcParams['figure.figsize'] = figsize
-    plt.figure
-    plt.subplot(131),plt.imshow(img)
-    plt.subplot(132),plt.imshow(mask,'gray')
-    plt.subplot(133), plt.imshow(img * np.dstack((mask, mask, mask)))  
-    plt.show()
-
-
 #input binary mask (0,1), or boolean mask (True/False)
 def maskLabeling(mask, sizeTh):
     # https://stackoverflow.com/questions/35854197/how-to-use-opencvs-connected-components-with-stats-in-python
@@ -83,6 +73,18 @@ def maskLabeling(mask, sizeTh):
 #############################################
 #  Visualization
 ##############################################
+
+def visMask_plt(img, mask, figsize=[24,12]):
+    plt.rcParams['figure.figsize'] = figsize
+    plt.figure
+    plt.subplot(131),plt.imshow(img)
+    plt.subplot(132),plt.imshow(mask,'gray')
+    plt.subplot(133), plt.imshow(img * np.dstack((mask, mask, mask)))
+    plt.show()
+
+def visMask_cv(mask, fig_name='mask'):
+    cv2.imshow(fig_name, mask)
+
 #show image map with different color 
 def imshow_components(labels, fig_name="labels"):
     # Map component labels to hue val
