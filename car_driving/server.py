@@ -7,6 +7,7 @@ import time
 import picamera
 import fcntl
 import  sys
+import copy
 import threading
 from Motor import *
 from servo import *
@@ -18,9 +19,12 @@ from Light import *
 from Ultrasonic import *
 from Line_Tracking import *
 from eco_disaster import *
+
 from threading import Timer
 from threading import Thread
 from Command import COMMAND as cmd
+
+import ColorMask as cmf
 
 class Server:   
     def __init__(self):
@@ -82,23 +86,29 @@ class Server:
         self.server_socket.close()
         try:
             with picamera.PiCamera() as camera:
-                camera.resolution = (400,300)      # pi camera resolution
-                camera.framerate = 30               # 15 frames/sec
+                #camera.resolution = (400,300)      # pi camera resolution
+                camera.resolution = (384, 288)  # pi camera resolution
+                camera.framerate = 20  # 30               # 15 frames/sec
                 time.sleep(2)                       # give 2 secs for camera to initilize
-                start = time.time()
-                stream = io.BytesIO()
+                bgrimg = np.empty((288, 384,3),dtype=np.uint8)
+                #stream = io.BytesIO()
                 # send jpeg format video stream
                 print "Start transmit ... "
 
-                for foo in camera.capture_continuous(stream, 'jpeg', use_video_port = True):
+                start = time.time()
+                #for foo in camera.capture_continuous(stream, 'jpeg', use_video_port = True):
+                for foo in camera.capture_continuous(bgrimg, 'bgr', use_video_port=True):
                     try:
                         self.connection.flush()
-                        stream.seek(0)
-                        b = stream.read()
-                        length=len(b)
-                        if length >5120000:
-                            continue
+                        #stream.seek(0)
+                        #b = stream.read()
+                        #length=len(b)
+                        #if length >5120000:
+                        #    continue
                         #### a new frame is ready, send to consumers ####
+
+                        # decode the image
+                        #bgrimg = cv2.imdecode(np.frombuffer(b, dtype=np.uint8), cv2.IMREAD_COLOR)
 
                         #################################
                         ## call eco-disaster
@@ -113,18 +123,65 @@ class Server:
                         """
                         with self.newFrameLock:  # blocking
                             # print("Server writing frame to eco disaster")
-                            self.ecodisaster.stream.seek(0)
-                            self.ecodisaster.stream.truncate()
-                            self.ecodisaster.stream.write(b)
+                            #self.ecodisaster.stream.seek(0)
+                            #self.ecodisaster.stream.truncate()
+                            #self.ecodisaster.stream.write(b)
+
+                            #send the input
+                            self.ecodisaster.bgrimage = bgrimg.copy()
+
+                            #get the output of perception (from previous frames)
+                            percOut = copy.deepcopy(self.ecodisaster.percOut)
+
                         # set the event ready
                         self.newFrameEvent.set()
 
+                        # visualize results into the frame
+                        try:
+                            arena_floor = percOut.arena_floor
+                            color_zones = percOut.color_zones
+                            imH, imW = bgrimg.shape[0:2]
+                            # write results to image
+                            whitecolor = (255, 255, 255)
+                            cv2.line(bgrimg, (0, arena_floor.arena_ceiling), (imW - 1, arena_floor.arena_ceiling),
+                                     whitecolor, 3)
+                            if len(arena_floor.center_barrel) > 0:
+                                cmf.draw_rect_cv2(bgrimg, arena_floor.center_barrel, whitecolor, 3)
+                                if arena_floor.barrel_in_arm:
+                                    cv2.circle(bgrimg, tuple(arena_floor.center_barrel[5:7].astype(np.int)), 2, whitecolor,
+                                               2)
+                            cmf.draw_rect_cv2(bgrimg, arena_floor.blue_zone, whitecolor, 3)
+                            if arena_floor.blue_zone_at_center:
+                                cv2.circle(bgrimg, tuple(arena_floor.blue_zone[5:7].astype(np.int)), 2, whitecolor, 2)
+                            cmf.draw_rect_cv2(bgrimg, arena_floor.yellow_zone, whitecolor, 3)
+                            if arena_floor.yellow_zone_at_center:
+                                cv2.circle(bgrimg, tuple(arena_floor.yellow_zone[5:7].astype(np.int)), 2, whitecolor, 2)
+                            cmf.draw_rect_cv2(bgrimg, arena_floor.red_barrels_in_view, (0, 0, 255), 1)
+                            cmf.draw_rect_cv2(bgrimg, arena_floor.green_barrels_in_view, (0, 255, 0), 1)
+    
+                            cmf.draw_rect_cv2(bgrimg, color_zones.blackZones, (255, 0, 255), 1)
+                            cmf.draw_rect_cv2(bgrimg, color_zones.blueZones, (255, 0, 0), 1)
+                            cmf.draw_rect_cv2(bgrimg, color_zones.yellowZones, (0, 255, 255), 1)
+                        except : 
+                            pass
+
                         # send over network to display on client
+                        b = cv2.imencode('.jpeg', bgrimg)[1].tostring()
+                        length = str(sys.getsizeof(b))
+                        # convert image to stream
                         lengthBin = struct.pack('L', length)
                         self.connection.write(lengthBin)
                         self.connection.write(b)
-                        stream.seek(0)
-                        stream.truncate()
+                        #stream.seek(0)
+                        #stream.truncate()
+
+                        #control the frame to send the video
+                        #cur_time = time.time()
+                        #while cur_time - start < 0.050:
+                        #    time.sleep(0.005)
+                        #    cur_time = time.time()
+                        #start = cur_time
+
                     except :
                         print "End transmit ... " 
                         break

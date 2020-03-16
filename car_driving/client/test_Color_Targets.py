@@ -15,7 +15,7 @@ from Perception import *
 # Main program logic follows:
 if __name__ == '__main__':
 
-    perc = Perception(False)
+    perc = Perception(False, True)
     # read images from a directory, process and then save results
     imgnameprefix = "D:/DashanGao/Robotics/Claire/PiWarsUCSD/images/seq1/videoimage"
     for i in range(60, 233):  # (60,233):  79, 109, 209

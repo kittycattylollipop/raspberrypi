@@ -66,7 +66,7 @@ class ColorZones:
 
 
 class Perception:
-    def __init__(self, sensor_on=True):
+    def __init__(self, sensor_on=True, viz=False):
         self.sensor_on = sensor_on
         if self.sensor_on:
             self.sensors = ss.Sensors()
@@ -83,6 +83,7 @@ class Perception:
         # internal data
         self.arena_floor = ArenaFloor()
         self.color_zones = ColorZones()
+        self.visualize = viz
 
     # process for one step
     def step(self, image):
@@ -273,7 +274,8 @@ class Perception:
         labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
 
         # visualize
-        cmf.imshow_components(labels_im, "red")
+        if self.visualize:
+            cmf.imshow_components(labels_im, "red")
 
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
@@ -284,7 +286,6 @@ class Perception:
 
         # use Ratio (for dark green)
         ratioTh = np.array([-0.2, 0, 3])
-        #rgbTh = np.array([-30, 50, -30])
         rgbTh = np.array([-20, 50, -20])
         ratio_mask =  cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh)
 
@@ -295,16 +296,18 @@ class Perception:
             norm_mask = cmf.img_mask(normImg, normRGBTh) & cmf.img_mask(image, imgRGBTh)
 
         mask = hsv_mask + ratio_mask
-        #cmf.visMask_cv(hsv_mask.astype('uint8')*255,'green-hsv')
-        #cmf.visMask_cv(ratio_mask.astype('uint8')*255,'green-ratio')
-        #cmf.visMask_cv(mask.astype('uint8')*255,'green-mask')
+        if self.visualize:
+            cmf.visMask_cv(hsv_mask.astype('uint8')*255,'green-hsv')
+            cmf.visMask_cv(ratio_mask.astype('uint8')*255,'green-ratio')
+            cmf.visMask_cv(mask.astype('uint8')*255,'green-mask')
 
         # connected components
         sizeTh = 120
         labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
 
         # visualize
-        cmf.imshow_components(labels_im, "green")
+        if self.visualize:
+            cmf.imshow_components(labels_im, "green")
 
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
@@ -321,16 +324,18 @@ class Perception:
         ratio_mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh)
 
         mask = hsv_mask + ratio_mask
-        cmf.visMask_cv(hsv_mask.astype('uint8')*255,'blue-hsv')
-        cmf.visMask_cv(ratio_mask.astype('uint8')*255,'blue-ratio')
-        cmf.visMask_cv(mask.astype('uint8') * 255, 'blue-mask')
+        # if self.visualize:
+        #   cmf.visMask_cv(hsv_mask.astype('uint8')*255,'blue-hsv')
+        #   cmf.visMask_cv(ratio_mask.astype('uint8')*255,'blue-ratio')
+        #   cmf.visMask_cv(mask.astype('uint8') * 255, 'blue-mask')
 
         # connected components
         sizeTh = 800
         labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
 
         # visualize
-        cmf.imshow_components(labels_im, "blue")
+        if self.visualize:
+            cmf.imshow_components(labels_im, "blue")
 
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
@@ -346,7 +351,8 @@ class Perception:
         labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
 
         # visualize
-        cmf.imshow_components(labels_im, "yellow")
+        if self.visualize:
+            cmf.imshow_components(labels_im, "yellow")
 
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
@@ -364,7 +370,8 @@ class Perception:
         labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
 
         #visualize
-        cmf.imshow_components(labels_im, "black")
+        if self.visualize:
+            cmf.imshow_components(labels_im, "black")
 
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
