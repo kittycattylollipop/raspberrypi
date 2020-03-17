@@ -87,6 +87,7 @@ class Perception:
 
     # process for one step
     def step(self, image):
+        #print("Perception-Step: start")
         # get the sensor inputs
         if self.sensor_on:
             ss_out = self.sensors.sensorRead(False)  # don't read all angles
@@ -103,6 +104,8 @@ class Perception:
         # inference
         self.inference(image, ss_out, self.color_zones)
 
+        #print("Perception-Step: end")
+        
         return self.arena_floor, self.color_zones
 
     # the function to inference the world from the sensor inputs
