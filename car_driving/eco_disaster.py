@@ -32,7 +32,7 @@ class EcoDisaster:
             self.percOut = [None, None] #output from perception
             self.visualize = False
             
-    def run(self, frame_event, stream_lock, visualize=False):            
+    def run(self, frame_event, stream_lock, visualize=False, save_img=False):
         self.visualize = visualize
         counter = 0
         while True:
@@ -70,36 +70,41 @@ class EcoDisaster:
                     self.percOut[1] = copy.deepcopy(color_zones) #1 is for color_zones
 
                 
-                # TEMP code write out to an image, and show image
+                # visualize result and save output image
                 if self.visualize:                
-                        #print(arena_floor)
-                        # viz results
-                        imH, imW = self.bgrimage.shape[0:2]
-                        # write results to image
-                        whitecolor = (255, 255, 255)
-                        cv2.line(self.bgrimage, (0, arena_floor.arena_ceiling), (imW - 1, arena_floor.arena_ceiling), whitecolor, 3)
-                        if len(arena_floor.center_barrel) > 0:
-                            cmf.draw_rect_cv2(self.bgrimage, arena_floor.center_barrel, whitecolor, 3)
-                            if arena_floor.barrel_in_arm:
-                                cv2.circle(self.bgrimage, tuple(arena_floor.center_barrel[5:7].astype(np.int)), 2, whitecolor, 2)
-                        cmf.draw_rect_cv2(self.bgrimage, arena_floor.blue_zone, whitecolor, 3)
-                        if arena_floor.blue_zone_at_center:
-                            cv2.circle(self.bgrimage, tuple(arena_floor.blue_zone[5:7].astype(np.int)), 2, whitecolor, 2)
-                        cmf.draw_rect_cv2(self.bgrimage, arena_floor.yellow_zone, whitecolor, 3)
-                        if arena_floor.yellow_zone_at_center:
-                            cv2.circle(self.bgrimage, tuple(arena_floor.yellow_zone[5:7].astype(np.int)), 2, whitecolor, 2)
-                        cmf.draw_rect_cv2(self.bgrimage, arena_floor.red_barrels_in_view, (0, 0, 255), 1)
-                        cmf.draw_rect_cv2(self.bgrimage, arena_floor.green_barrels_in_view, (0, 255, 0), 1)
+                    #print(arena_floor)
+                    # viz results
+                    imH, imW = self.bgrimage.shape[0:2]
+                    # write results to image
+                    whitecolor = (255, 255, 255)
+                    cv2.line(self.bgrimage, (0, arena_floor.arena_ceiling), (imW - 1, arena_floor.arena_ceiling), whitecolor, 3)
+                    if len(arena_floor.center_barrel) > 0:
+                        cmf.draw_rect_cv2(self.bgrimage, arena_floor.center_barrel, whitecolor, 3)
+                        if arena_floor.barrel_in_arm:
+                            cv2.circle(self.bgrimage, tuple(arena_floor.center_barrel[5:7].astype(np.int)), 2, whitecolor, 2)
+                    cmf.draw_rect_cv2(self.bgrimage, arena_floor.blue_zone, whitecolor, 3)
+                    if arena_floor.blue_zone_at_center:
+                        cv2.circle(self.bgrimage, tuple(arena_floor.blue_zone[5:7].astype(np.int)), 2, whitecolor, 2)
+                    cmf.draw_rect_cv2(self.bgrimage, arena_floor.yellow_zone, whitecolor, 3)
+                    if arena_floor.yellow_zone_at_center:
+                        cv2.circle(self.bgrimage, tuple(arena_floor.yellow_zone[5:7].astype(np.int)), 2, whitecolor, 2)
+                    cmf.draw_rect_cv2(self.bgrimage, arena_floor.red_barrels_in_view, (0, 0, 255), 1)
+                    cmf.draw_rect_cv2(self.bgrimage, arena_floor.green_barrels_in_view, (0, 255, 0), 1)
 
-                        cmf.draw_rect_cv2(self.bgrimage, color_zones.blackZones, (255, 0, 255), 1)
-                        cmf.draw_rect_cv2(self.bgrimage, color_zones.blueZones, (255, 0, 0), 1)
-                        cmf.draw_rect_cv2(self.bgrimage, color_zones.yellowZones, (0, 255, 255), 1)
-                
-                
-                savename = '/home/pi/temp/videoimage{0:06d}.jpg'.format(counter)
-                print('eco_disaster: write to image '+ savename)        
-                cv2.imwrite(savename, self.bgrimage)
+                    cmf.draw_rect_cv2(self.bgrimage, color_zones.blackZones, (255, 0, 255), 1)
+                    cmf.draw_rect_cv2(self.bgrimage, color_zones.blueZones, (255, 0, 0), 1)
+                    cmf.draw_rect_cv2(self.bgrimage, color_zones.yellowZones, (0, 255, 255), 1)
+
+                if save_img:
+                    savename = '/home/pi/temp/videoimage{0:06d}.jpg'.format(counter)
+                    print('eco_disaster: write to image '+ savename)
+                    cv2.imwrite(savename, self.bgrimage)
+                else:
+                    print("EcoDis=>Frame count = %s" % counter)
                 counter += 1
+
+                # motion planning and control
+
 
                 # pause and clear event for the next frame                
                 cur_time = time.time()

@@ -270,7 +270,7 @@ class Server:
                             print("ECO-Disaster thread started")
                             self.lightRun=threading.Thread(target=self.ecodisaster.run, args=(self.newFrameEvent,
                                                                                               self.newFrameLock,
-                                                                                              True))
+                                                                                              True, True))
                             self.lightRun.start()
                         elif data[1]=='three':
                             self.stopMode()
