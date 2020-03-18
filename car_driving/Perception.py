@@ -23,6 +23,9 @@ class ArenaFloor:
     COLOR_BLACK = "Black"
 
     def __init__(self):
+
+        self.img_width = 0
+        self.img_height = 0
         self.arena_ceiling = 0
         self.dist_to_obj = -np.ones(4)   # front, left, back, right
         self.barrel_in_center_zone = False
@@ -111,6 +114,8 @@ class Perception:
     # the function to inference the world from the sensor inputs
     def inference(self, image, ss_out, color_zones):
         im_h, im_w = image.shape[0:2]
+        self.arena_floor.img_width = im_w
+        self.arena_floor.img_height = im_h
 
         # set the distance to objects
         if self.sensor_on:
