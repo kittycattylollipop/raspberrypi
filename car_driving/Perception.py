@@ -17,6 +17,7 @@ except:
     print("Sensors Class is not available!")
     SENSOR_ON = False
 
+
 # a data class for the world
 class ArenaFloor:
     COLOR_RED = "Red"
@@ -43,9 +44,16 @@ class ArenaFloor:
         self.at_yellow_zone = False
         self.red_barrels_in_view = np.empty((0, ArenaFloor.ZONE_DIM))
         self.green_barrels_in_view = np.empty((0, ArenaFloor.ZONE_DIM))
+        self.red_barrel_at_center = np.empty(0)
+        # a vector representing where the barrels are
+        # (0: outside of center zone, 1: in center zone, 2: at center)
+        self.red_barrel_loc = np.empty(0)
+        self.green_barrel_loc = np.empty(0)
 
     def __str__(self):
         string = "Arena Floor states: " \
+                 + "\n img_width: % s " % (self.img_width) \
+                 + "\n img_width: % s " % (self.img_height) \
                  + "\n  arena_ceiling: % s " % (self.arena_ceiling) \
                  + "\n  dist_to_obj: %s " % (self.dist_to_obj) \
                  + "\n  barrel_in_center_zone: %s " % (self.barrel_in_center_zone) \
@@ -59,9 +67,10 @@ class ArenaFloor:
                  + "\n  at_blue_zone: %s " % (self.at_blue_zone) \
                  + "\n  at_yellow_zone: %s " % (self.at_yellow_zone) \
                  + "\n  red_barrels_in_view: %s " % (self.red_barrels_in_view) \
-                 + "\n  green_barrels_in_view: %s " % (self.green_barrels_in_view)
+                 + "\n  red_barrel_loc: %s " % (self.red_barrel_loc) \
+                 + "\n  green_barrels_in_view: %s " % (self.green_barrels_in_view) \
+                 + "\n  green_barrel_loc: %s " % (self.green_barrel_loc)
         return string
-
 
 class ColorZones:
     def __init__(self):
@@ -81,11 +90,11 @@ class Perception:
             self.servoPositons = ['center', 'left', 'right']
 
         # TODO: algorithm parameters
-        self.para_img_ctr_minX = 0.3
-        self.para_img_ctr_maxX = 0.7
-        self.para_barrel_width_th = 0.4
+        self.param_img_ctr_minX = 0.3
+        self.param_img_ctr_maxX = 0.7
+        self.param_barrel_width_th = 0.4
 
-        self.para_ceiling_ub = 0.75
+        self.param_ceiling_ub = 0.75
 
         # internal data
         self.arena_floor = ArenaFloor()
@@ -139,13 +148,16 @@ class Perception:
         self.arena_floor.green_barrels_in_view = color_zones.greenZones
 
         # check if image center is occupied by either red or green
-        red_in_zone, red_at_center = self.within_image_center(color_zones.redZones, im_w, im_h)
+        red_in_zone, red_at_center, red_zones_loc = self.within_image_center(color_zones.redZones, im_w, im_h)
+        self.arena_floor.red_barrel_loc = red_zones_loc
+        green_in_zone, green_at_center, green_zones_loc = self.within_image_center(color_zones.greenZones, im_w, im_h)
+        self.arena_floor.green_barrel_loc = green_zones_loc
+
         if len(red_at_center) > 0:  # red barrel at center
             self.arena_floor.barrel_in_center_zone = True
             self.arena_floor.center_barrel = red_at_center
             self.arena_floor.center_barrel_color = ArenaFloor.COLOR_RED
         else:
-            green_in_zone, green_at_center = self.within_image_center(color_zones.greenZones, im_w, im_h)
             if len(green_at_center) > 0:  # green target at center
                 self.arena_floor.barrel_in_center_zone = True
                 self.arena_floor.center_barrel = green_at_center
@@ -160,7 +172,7 @@ class Perception:
                 self.arena_floor.center_barrel_color = ""
 
         # check if barrel is in arm
-        if len(self.arena_floor.center_barrel) > 0 and (self.arena_floor.center_barrel[2] > self.para_barrel_width_th
+        if len(self.arena_floor.center_barrel) > 0 and (self.arena_floor.center_barrel[2] > self.param_barrel_width_th
                                                         * im_w):
             self.arena_floor.barrel_in_arm = True
         else:
@@ -220,27 +232,28 @@ class Perception:
     def find_arena_ceiling(self, color_zones, im_h):
         ceiling = 0
         for zone in color_zones.blueZones:
-            if (zone[1] < self.para_ceiling_ub * im_h) & (zone[1] > ceiling):
+            if (zone[1] < self.param_ceiling_ub * im_h) & (zone[1] > ceiling):
                 ceiling = zone[1]
         # maxblueZone = np.argmax(color_zones.blueZones[:, 4])
         # if color_zones.blueZones[maxblueZone, 1] < self.para_ceiling_ub * im_h:
         #    ceiling = np.maximum(color_zones.blueZones[maxblueZone, 1], ceiling)
         for zone in color_zones.yellowZones:
-            if (zone[1] < self.para_ceiling_ub * im_h) & (zone[1] > ceiling):
+            if (zone[1] < self.param_ceiling_ub * im_h) & (zone[1] > ceiling):
                 ceiling = zone[1]
         for zone in color_zones.blackZones:
-            if (zone[1] < self.para_ceiling_ub * im_h) & (zone[1] > ceiling):
+            if (zone[1] < self.param_ceiling_ub * im_h) & (zone[1] > ceiling):
                 ceiling = zone[1]
         return np.int(ceiling)
 
     def within_image_center(self, zones, imW, imH):
         in_zone = False
-        left = self.para_img_ctr_minX * imW
-        right = self.para_img_ctr_maxX * imW
+        left = self.param_img_ctr_minX * imW
+        right = self.param_img_ctr_maxX * imW
 
         center_zone = np.empty(0)
+        zones_loc = np.empty(0)
         if zones.size == 0:
-            return in_zone, center_zone
+            return in_zone, center_zone, zones_loc
         # get zone index having the largest overlap with the center zone
         overlap = np.minimum(zones[:, 0] + zones[:, 2] - 1, right) - np.maximum(zones[:, 0], left)
         idx = np.argmax(overlap)
@@ -249,7 +262,12 @@ class Perception:
             z = zones[idx, :]
             if (z[0] < imW / 2) and (z[0] + z[2] > imW / 2):
                 center_zone = z
-        return in_zone, center_zone
+
+        loc1 = (overlap > 0).astype(np.int)
+        loc2 = np.logical_and((zones[:, 0] < imW / 2), (zones[:, 0] + zones[:, 2] > imW / 2))
+        loc2 = loc2.astype(np.int)
+        zones_loc = loc1 + loc2
+        return in_zone, center_zone, zones_loc
 
     # get red, green barrels, get blue and yellow zones, get black walls
     def colorAnalysis(self, image, ratioImg, normImg, hsvImg):

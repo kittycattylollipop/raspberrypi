@@ -29,11 +29,16 @@ class MotionPlanning:
 
         self.param_forward_speed = 800
         self.param_turn_speed = 1600
+        self.param_speed_adjust = 0.1
+
+        self.param_img_ctr_offset = 0.1
+
 
     def step(self, arena_floor, time_out=0):
+        # cancel the time out thread
         if self.car_timer is not None:
             self.car_timer.cancel()
-
+        # motion planning for each state
         if self.task_state == TaskStates.FindBarrel:
             self.barrel_finding(arena_floor)
         elif self.task_state == TaskStates.CatchBarrel:
@@ -47,12 +52,13 @@ class MotionPlanning:
             self.car_timer = threading.Timer(time_out, self.car.stop)
             self.car_timer.start()
 
+    # find a barrel to move
     def barrel_finding(self, arena_floor):
         if len(arena_floor.red_barrels_in_view) == 0 and len(arena_floor.green_barrels_in_view) == 0:
             self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
-        elif arena_floor.barrel_in_center_zone:
+        elif len(arena_floor.center_barrel) > 0:  # barrel at image center, move to next state
             self.task_state = TaskStates.CatchBarrel
-            self.car.move_forward(self.param_forward_speed)
+            self.barrel_catching(arena_floor)
         else:
             min_red_dist, min_red_barrel = self.min_dist_to_center(arena_floor.red_barrels_in_view)
             min_green_dist, min_green_barrel = self.min_dist_to_center(arena_floor.green_barrels_in_view)
@@ -62,10 +68,71 @@ class MotionPlanning:
             else:
                 min_dist = min_green_dist
                 min_barrel = min_green_barrel
-            if min_barrel[5] > arena_floor.img_width:
+            if min_barrel[5] > arena_floor.img_width / 2:
                 self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
             else:
                 self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
+
+    def barrel_catching(self, arena_floor):
+        if arena_floor.barrel_in_arm:  # barrel is already in arm
+            # move to the next state
+            self.task_state = TaskStates.MoveBarrel
+            self.barrel_moving(arena_floor)
+        else:
+            if len(arena_floor.center_barrel) > 0:  # barrel at center, but not in arm yet
+                # move toward the barrel, but also correcting the error
+                dist_err = arena_floor.center_barrel[5]/arena_floor.img_width - 0.5
+                speed_adjust_ratio = np.abs(dist_err) / self.param_img_ctr_offset * self.param_speed_adjust
+                adjust_speed = self.param_forward_speed * (1 - speed_adjust_ratio)
+                if dist_err > 0:  # the target is to the right of the center
+                    # move forward with right wheels turn a bit slower (turn right slightly)
+                    self.car.move_forward(self.param_forward_speed, adjust_speed)
+                else:  # the target is to the right of the right of the center
+                    # move forward with left wheels turn a bit slower (turn left slightly)
+                    self.car.move_forward(adjust_speed, self.param_forward_speed)
+            else:  # barrel is not at the center any more
+                # move back to previous state
+                self.task_state = TaskStates.FindBarrel
+                self.barrel_finding(arena_floor)
+
+    # moving barrels to the zone
+    def barrel_moving(self, arena_floor):
+        if not arena_floor.barrel_in_arm:
+            # move back to previous state
+            self.task_state = TaskStates.CatchBarrel
+            self.barrel_catching(arena_floor)
+        else:
+            # determine which zone to move to
+            if arena_floor.center_barrel_color == arena_floor.COLOR_RED:
+                target_zone_color = arena_floor.COLOR_YELLOW
+                target_zone = arena_floor.yellow_zone
+                target_zone_at_center = arena_floor.yellow_zone_at_center
+                obstacles = arena_floor.green_barrels_in_view
+            else:
+                target_zone_color = arena_floor.COLOR_BLUE
+                target_zone = arena_floor.blue_zone
+                target_zone_at_center = arena_floor.blue_zone_at_center
+                obstacles = arena_floor.red_barrels_in_view
+            # if the zone is at the center
+            if target_zone_at_center:
+                # check if any obstacles in the path
+
+
+
+            # if the zone is in the view
+            # if the zone is not in the view
+            # if at the zone
+
+
+
+    def barrel_unloading(self, arena_floor):
+        pass
+
+
+
+
+
+
 
     def min_dist_to_center(self, barrels, img_width, img_height):
         min_dist = img_width

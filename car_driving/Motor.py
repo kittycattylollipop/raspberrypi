@@ -80,7 +80,10 @@ class Motor:
         self.right_Lower_Wheel(duty4)
     
     def move_forward(self, speed): #speed is 0 ~ 4095
-        self.setMotorModel(-speed, -speed, -speed, -speed)        
+        self.setMotorModel(-speed, -speed, -speed, -speed)
+
+    def move_forward(self, left_speed, right_speed): #speed is 0 ~ 4095
+        self.setMotorModel(-left_speed, -left_speed, -right_speed, -right_speed)
         
     def move_backward(self, speed): #speed is 0 ~ 4095
         self.setMotorModel(speed,speed,speed,speed)

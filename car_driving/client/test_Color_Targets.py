@@ -52,4 +52,3 @@ if __name__ == '__main__':
         cv2.imshow("camera image", bgrimg)
         cv2.waitKey(0)
 
-    pass
