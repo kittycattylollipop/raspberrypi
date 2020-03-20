@@ -8,6 +8,7 @@ import RPi.GPIO as GPIO
 from Ultrasonic import *
 from servo import *
 
+import copy
 
 class SENSOR_TYPE:
     SENSOR_IR = "IR"
@@ -104,8 +105,7 @@ class Sensors:
             self.ultrasonicTimer = threading.Timer(0.2, self.readUltrasonic)
             self.ultrasonicTimer.start()
 
-        data = SensorData()
         with self.data_lock:
-            data = self.data
+            data = copy.deepcopy(self.data)
 
         return data
