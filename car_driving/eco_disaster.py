@@ -20,7 +20,7 @@ class EcoDisaster:
         #self.stream = io.BytesIO()  # frame buffer
         self.bgrimage = None
         self.image = None
-        self.perception = perc.Perception(False, False)
+        self.perception = perc.Perception(True, False)
         self.planning = None
         self.percOut = [None, None] #output from perception
         
