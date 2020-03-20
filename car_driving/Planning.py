@@ -30,6 +30,7 @@ class MotionPlanning:
         self.param_forward_speed = 800
         self.param_turn_speed = 1600
         self.param_speed_adjust = 0.1
+        self.param_sleep_time = 0.2
 
         self.param_img_ctr_offset = 0.1
 
@@ -87,9 +88,12 @@ class MotionPlanning:
                 if dist_err > 0:  # the target is to the right of the center
                     # move forward with right wheels turn a bit slower (turn right slightly)
                     self.car.move_forward(self.param_forward_speed, adjust_speed)
-                else:  # the target is to the right of the right of the center
+                elif dist_err < 0:  # the target is to the right of the right of the center
                     # move forward with left wheels turn a bit slower (turn left slightly)
                     self.car.move_forward(adjust_speed, self.param_forward_speed)
+                else:
+                    # move forward with same speed
+                    self.car.move_forward(self.param_forward_speed)
             else:  # barrel is not at the center any more
                 # move back to previous state
                 self.task_state = TaskStates.FindBarrel
@@ -108,20 +112,41 @@ class MotionPlanning:
                 target_zone = arena_floor.yellow_zone
                 target_zone_at_center = arena_floor.yellow_zone_at_center
                 obstacles = arena_floor.green_barrels_in_view
+                obstacle_loc = arena_floor.green_barrel_loc
             else:
                 target_zone_color = arena_floor.COLOR_BLUE
                 target_zone = arena_floor.blue_zone
                 target_zone_at_center = arena_floor.blue_zone_at_center
                 obstacles = arena_floor.red_barrels_in_view
-            # if the zone is at the center
-            if target_zone_at_center:
-                # check if any obstacles in the path
+                obstacle_loc = arena_floor.red_barrel_loc
 
-
-
-            # if the zone is in the view
-            # if the zone is not in the view
             # if at the zone
+            if arena_floor.at_blue_zone or arena_floor.at_yellow_zone:
+                self.task_state = TaskStates.UnloadBarrel
+                self.barrel_unloading()
+            else:
+                # if the zone is at the center
+                if target_zone_at_center:
+                    # check if any obstacles in the path
+                    if np.any(obstacle_loc == 2):
+                        direction = np.random.randint(0, 2)
+                        if direction == 0:
+                            self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
+                        else:
+                            self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
+                        time.sleep(self.param_sleep_time)
+                        self.car.move_forward(self.param_forward_speed)
+
+                elif len(target_zone) > 0:
+                    # when the zone is in the view
+                    if target_zone[5] > arena_floor.img_width/2:
+                        self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
+                    else:
+                        self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
+
+                else:  # if the zone is not in the view
+                    self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
+
 
 
 

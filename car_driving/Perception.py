@@ -25,7 +25,7 @@ class ArenaFloor:
     COLOR_BLUE = "Blue"
     COLOR_YELLOW = "Yellow"
     COLOR_BLACK = "Black"
-    ZONE_DIM = 7
+    ZONE_DIM = 7  # left, top, width, height, area, centroid x, centroid y
 
     def __init__(self):
         self.img_width = 0
@@ -196,7 +196,7 @@ class Perception:
             self.arena_floor.blue_zone = np.empty(0)
 
         # check if at blue zone
-        if self.sensor_on and self.arena_floor.blue_zone_at_center and ss_out.IRread.sum() >= 2:
+        if self.sensor_on and self.arena_floor.blue_zone_at_center and ss_out.IRread.sum() <= 1:
             self.arena_floor.at_blue_zone = True
         else:
             self.arena_floor.at_blue_zone = False
@@ -219,7 +219,7 @@ class Perception:
             self.arena_floor.yellow_zone = np.empty(0)
 
         # check if at yellow zone
-        if self.sensor_on and self.arena_floor.yellow_zone_at_center and ss_out.IRread.sum() >= 2:
+        if self.sensor_on and self.arena_floor.yellow_zone_at_center and ss_out.IRread.sum() <= 1:
             self.arena_floor.at_yellow_zone = True
         else:
             self.arena_floor.at_yellow_zone = False
