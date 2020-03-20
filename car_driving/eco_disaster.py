@@ -11,6 +11,8 @@ import copy
 
 import Perception as perc
 import ColorMask as cmf
+import Planning as plan
+from Motor import Motor
 
 logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-9s) %(message)s',)
@@ -21,16 +23,20 @@ class EcoDisaster:
         self.bgrimage = None
         self.image = None
         self.perception = perc.Perception(True, False)
-        self.planning = None
-        self.percOut = [None, None] #output from perception
+        self.percOut = [None, None] # output from perception
+
+        self.planning = plan.MotionPlanning()
+        self.car = Motor()
         
-        self.frame_rate = 20 
-        
-        self.visualize = False        
+        self.frame_rate = 10
+        self.visualize = False
+
+        self.param_auto_drive_timeout = 0.1
 
     def reset(self):
             self.percOut = [None, None] #output from perception
             self.visualize = False
+            self.planning.car.stop()
             
     def run(self, frame_event, stream_lock, visualize=False, save_img=False):
         self.visualize = visualize
@@ -46,8 +52,7 @@ class EcoDisaster:
                 # TODO: start the auto drive task here
                 ################################################                
                 start = time.time()
-                
-                
+
                 # read image from bugger 
                 #use lock to block
                 with stream_lock: 
@@ -58,8 +63,7 @@ class EcoDisaster:
                     #self.stream.truncate()
                     #print("convert bgt to rgb image")
                     self.image = self.bgrimage.copy()[..., ::-1]
-                
-                
+
                 #call the perception step
                 #print("call perception")
                 arena_floor, color_zones = self.perception.step(self.image)
@@ -68,7 +72,6 @@ class EcoDisaster:
                 with stream_lock:
                     self.percOut[0] = copy.deepcopy(arena_floor) #0 is for arena_floor
                     self.percOut[1] = copy.deepcopy(color_zones) #1 is for color_zones
-
                 
                 # visualize result and save output image
                 if self.visualize:                
@@ -104,7 +107,7 @@ class EcoDisaster:
                 counter += 1
 
                 # motion planning and control
-
+                self.planning.step(arena_floor, self.param_auto_drive_timeout)
 
                 # pause and clear event for the next frame                
                 cur_time = time.time()
@@ -117,5 +120,6 @@ class EcoDisaster:
             except:
                 e = sys.exc_info()[0]
                 print("eco_disaster Exception: %s" % e)
+                self.car.stop()
                 break
 
