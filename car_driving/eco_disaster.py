@@ -107,7 +107,7 @@ class EcoDisaster:
                 counter += 1
 
                 # motion planning and control
-                self.planning.step(arena_floor, self.param_auto_drive_timeout)
+                #self.planning.step(arena_floor, self.param_auto_drive_timeout)
 
                 # pause and clear event for the next frame                
                 cur_time = time.time()

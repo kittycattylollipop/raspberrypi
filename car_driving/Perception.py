@@ -13,6 +13,7 @@ import ColorMask as cmf
 
 try:
     import Sensors as ss
+    SENSOR_ON = True
 except:
     print("Sensors Class is not available!")
     SENSOR_ON = False
@@ -280,8 +281,8 @@ class Perception:
         return clrzone
 
     def getRed(self, image, ratioImg, normImg, hsvImg):
-        useHSV = False
-        useRatio = True
+        useHSV = True
+        useRatio = False
 
         # use HSV image
         mask = []
@@ -290,14 +291,15 @@ class Perception:
             im_red_mask_2 = cv2.inRange(hsvImg, (165, 100, 30), (180, 255, 255))
             im_red_mask_1 = im_red_mask_1.astype('bool')
             im_red_mask_2 = im_red_mask_2.astype('bool')
-            mask = im_red_mask_1 + im_red_mask_2
-
+            hsv_mask = im_red_mask_1 + im_red_mask_2
+        
         # use Ratio
         if useRatio:
             ratioTh = [2, 2, 0]
             rgbTh = [50, -50, -50]
-            mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh)
+            ratio_mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh)
 
+        mask = hsv_mask #+ ratio_mask
         # connected components
         sizeTh = 80
         labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
@@ -368,11 +370,21 @@ class Perception:
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
     def getYellow(self, image, ratioImg, normImg, hsvImg):
+        # use HSV image        
+        hsv_mask = cv2.inRange(hsvImg, (80, 50, 50), (100, 255, 255)).astype('bool')
+        
         # use Ratio
         ratioTh1 = np.array([-1, 3, 3])
         ratioTh2 = np.array([0.85, 0, 0])
         rgbTh = np.array([100, 100, -60])
-        mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh1) & cmf.img_mask(ratioImg, ratioTh2)
+        ratio_mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh1) & cmf.img_mask(ratioImg, ratioTh2)
+        
+        mask = hsv_mask + ratio_mask 
+        if self.visualize:
+           cmf.visMask_cv(hsv_mask.astype('uint8')*255,'yellow-hsv')
+           cmf.visMask_cv(ratio_mask.astype('uint8')*255,'yellow-ratio')
+           cmf.visMask_cv(mask.astype('uint8') * 255, 'yellow-mask')
+        
         # cmf.visMask(image, mask)
         # connected components
         sizeTh = 800
