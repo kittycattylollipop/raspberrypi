@@ -93,9 +93,9 @@ class Perception:
         # TODO: algorithm parameters
         self.param_img_ctr_minX = 0.3
         self.param_img_ctr_maxX = 0.7
-        self.param_barrel_width_th = 0.4
+        self.param_barrel_width_th = 0.7 #0.4
 
-        self.param_ceiling_ub = 0.75
+        self.param_ceiling_ub = 0.5 #0.75
 
         # internal data
         self.arena_floor = ArenaFloor()
@@ -371,18 +371,18 @@ class Perception:
 
     def getYellow(self, image, ratioImg, normImg, hsvImg):
         # use HSV image        
-        hsv_mask = cv2.inRange(hsvImg, (80, 50, 50), (100, 255, 255)).astype('bool')
+        hsv_mask = cv2.inRange(hsvImg, (25, 50, 50), (35, 255, 255)).astype('bool')
         
         # use Ratio
-        ratioTh1 = np.array([-1, 3, 3])
-        ratioTh2 = np.array([0.85, 0, 0])
-        rgbTh = np.array([100, 100, -60])
-        ratio_mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh1) & cmf.img_mask(ratioImg, ratioTh2)
+        #ratioTh1 = np.array([-1, 3, 3])
+        #ratioTh2 = np.array([0.85, 0, 0])
+        #rgbTh = np.array([100, 100, -60])
+        #ratio_mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh1) & cmf.img_mask(ratioImg, ratioTh2)
         
-        mask = hsv_mask + ratio_mask 
+        mask = hsv_mask #+ ratio_mask
         if self.visualize:
            cmf.visMask_cv(hsv_mask.astype('uint8')*255,'yellow-hsv')
-           cmf.visMask_cv(ratio_mask.astype('uint8')*255,'yellow-ratio')
+           #cmf.visMask_cv(ratio_mask.astype('uint8')*255,'yellow-ratio')
            cmf.visMask_cv(mask.astype('uint8') * 255, 'yellow-mask')
         
         # cmf.visMask(image, mask)
@@ -397,12 +397,17 @@ class Perception:
         return np.hstack((connStats, connCent))  # (stats, centroid)
 
     def getBlack(self, image, ratioImg, normImg, hsvImg):
+        # use HSV image
+        #mask = cv2.inRange(hsvImg, (35, 0, 0), (100, 255, 50)).astype('bool')
+        #mask = cv2.inRange(hsvImg, (35, 0, 0), (100, 255, 50)).astype('bool')
+        mask = cv2.inRange(hsvImg, (35, 0, 0), (100, 255, 40)).astype('bool')
+
         # use Ratio
         # ratioTh = np.array([-0.6, 0, 1.5])
         # rgbTh = np.array([-10, -15, -10])
-        ratioTh = np.array([-0.6, 0, 1.5])
-        rgbTh = np.array([-10, -15, -10])
-        mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh)
+        #ratioTh = np.array([-0.6, 0, 1.5])
+        #rgbTh = np.array([-10, -15, -10])
+        #mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh)
 
         # connected components
         sizeTh = 1000

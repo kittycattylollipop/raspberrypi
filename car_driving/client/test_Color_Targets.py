@@ -10,25 +10,31 @@ from matplotlib import patches as patches
 import importlib
 
 from Perception import *
+from Planning import *
 
 
 # Main program logic follows:
 if __name__ == '__main__':
 
     perc = Perception(True, True)
+    plan = MotionPlanning()
     # read images from a directory, process and then save results
-    imgnameprefix = "C:\HomeDrive\Claire\Robotics\UCSD Pi Wars\images\seq9/videoimage"
+    #imgnameprefix = "C:\HomeDrive\Claire\Robotics\UCSD Pi Wars\images\seq9/videoimage"
     #imgnameprefix =  "D:/DashanGao/Robotics/Claire/PiWarsUCSD/images/seq1/videoimage"
-    for i in range(0, 110):  # (60,233):  79, 109, 209
+    imgnameprefix = "D:/DashanGao/Robotics/Claire/PiWarsUCSD/images/seq8/videoimage"
+    for i in range(0,110):  #(60, 230):  #(0,110) (60,233):  79, 109, 209
         imgname = imgnameprefix + "{0:06d}".format(i)
         print(imgname)
         bgrimg = cv2.imread(imgname+".jpg")
         image = bgrimg[..., ::-1]
 
         arena_floor, color_zones = perc.step(image)
-
         # display information
         print(arena_floor)
+
+        plan.step(arena_floor, 0.3)
+
+
 
         imH, imW = image.shape[0:2]
         # write results to image
