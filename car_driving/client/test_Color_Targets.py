@@ -19,9 +19,9 @@ if __name__ == '__main__':
     perc = Perception(True, True)
     plan = MotionPlanning()
     # read images from a directory, process and then save results
-    #imgnameprefix = "C:\HomeDrive\Claire\Robotics\UCSD Pi Wars\images\seq9/videoimage"
+    imgnameprefix = "C:\HomeDrive\Claire\Robotics\UCSD Pi Wars\images\seq9/videoimage"
     #imgnameprefix =  "D:/DashanGao/Robotics/Claire/PiWarsUCSD/images/seq1/videoimage"
-    imgnameprefix = "D:/DashanGao/Robotics/Claire/PiWarsUCSD/images/seq8/videoimage"
+    #imgnameprefix = "D:/DashanGao/Robotics/Claire/PiWarsUCSD/images/seq8/videoimage"
     for i in range(0,110):  #(60, 230):  #(0,110) (60,233):  79, 109, 209
         imgname = imgnameprefix + "{0:06d}".format(i)
         print(imgname)

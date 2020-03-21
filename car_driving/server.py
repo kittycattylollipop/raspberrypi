@@ -7,6 +7,7 @@ import time
 import picamera
 import fcntl
 import  sys
+import traceback
 import copy
 import threading
 from Motor import *
@@ -196,9 +197,9 @@ class Server:
                         #start = cur_time
 
                     except :
-                        e = sys.exc_info()[0]
-                        print("Exception: %s" % e)
-                        print "End transmit ... " 
+                        exc_type, exc_value, exc_traceback = sys.exc_info()
+                        traceback.print_exception(exc_type, exc_value, exc_traceback)
+                        print "End transmit ... "
                         break
         except:
             #print "Camera unintall"
@@ -398,4 +399,4 @@ class Server:
             else:
                 self.buzzer.run('0')
 if __name__=='__main__':
-    passS
+    pass

@@ -4,6 +4,7 @@ import numpy as np
 import cv2
 import io
 import sys
+import traceback
 import time
 from PIL import Image
 import logging
@@ -118,8 +119,8 @@ class EcoDisaster:
                 frame_event.clear()
                 
             except:
-                e = sys.exc_info()[0]
-                print("eco_disaster Exception: %s" % e)
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                traceback.print_exception(exc_type, exc_value, exc_traceback)
                 self.car.stop()
                 break
 

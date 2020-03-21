@@ -3,6 +3,7 @@
 # send out control signals to the car
 
 import sys
+import traceback
 import io
 import time
 import logging
@@ -46,7 +47,7 @@ class MotionPlanning:
 
     # step function to run at each time
     def step(self, arena_floor, time_out=0):
-        #try:
+        try:
             # cancel the time out thread
             if self.car_timer is not None:
                 self.car_timer.cancel()
@@ -68,11 +69,11 @@ class MotionPlanning:
             if time_out > 0 and self.motor_on:
                 self.car_timer = threading.Timer(time_out, self.car.stop)
                 self.car_timer.start()
-        #except:
-            #e = sys.exc_info()[0]
-            #print("MotionPlanning-step Exception: %s" % e)
-            #if self.motor_on:
-            #    self.car.stop()
+        except:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_exception(exc_type, exc_value, exc_traceback)
+            if self.motor_on:
+                self.car.stop()
 
     # find a barrel to move
     def barrel_finding(self, arena_floor):
