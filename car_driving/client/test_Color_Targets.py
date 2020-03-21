@@ -17,8 +17,9 @@ if __name__ == '__main__':
 
     perc = Perception(True, True)
     # read images from a directory, process and then save results
-    imgnameprefix = "D:/DashanGao/Robotics/Claire/PiWarsUCSD/images/seq1/videoimage"
-    for i in range(60, 233):  # (60,233):  79, 109, 209
+    imgnameprefix = "C:\HomeDrive\Claire\Robotics\UCSD Pi Wars\images\seq9/videoimage"
+    #imgnameprefix =  "D:/DashanGao/Robotics/Claire/PiWarsUCSD/images/seq1/videoimage"
+    for i in range(0, 110):  # (60,233):  79, 109, 209
         imgname = imgnameprefix + "{0:06d}".format(i)
         print(imgname)
         bgrimg = cv2.imread(imgname+".jpg")
