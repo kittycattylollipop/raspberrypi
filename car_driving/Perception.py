@@ -102,6 +102,11 @@ class Perception:
         self.color_zones = ColorZones()
         self.visualize = viz
 
+    def startSensors(self):
+        if self.sensor_on:
+                self.sensors.startUltrasonic()
+                time.sleep(0.5)
+
     # process for one step
     def step(self, image):
         # print("Perception-Step: start")

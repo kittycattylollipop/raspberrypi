@@ -23,9 +23,14 @@ class SensorData:
         self.USread = None
         self.servoPangle = None
         self.servoTangle = None
+            
 
 class Sensors:
     def __init__(self):
+        
+        self.param_servo_pan_home = 90
+        self.param_servo_tilt_home = 80
+        
         #set up Pins for IRs
         self.IRs = [14, 15, 23]
         GPIO.setmode(GPIO.BCM)
@@ -34,31 +39,34 @@ class Sensors:
 
         # init the Servo (Pan,tilt to get the angle)
         self.servo = Servo()
-        self.servo.setServoPwm('0', 90)
-        self.servo.setServoPwm('1', 90)
+        self.servo.setServoPwm('0', self.param_servo_pan_home)
+        self.servo.setServoPwm('1', self.param_servo_tilt_home)
 
         # servo angles
-        self.panAngles = [90]  # for servo 0
-        self.tiltAngles = [90]  # for servo 1
+        self.panAngles = [self.param_servo_pan_home]  # for servo 0
+        self.tiltAngles = [self.param_servo_tilt_home]  # for servo 1
 
         # set up the ultrasonic sensor
-        self.ultrasonic=Ultrasonic()
-        # use a timer to measure the distance by a time interval
-        self.ultrasonicTimer = threading.Timer(0.5, self.readUltrasonic)
-        self.ultrasonicTimer.start()
+        self.ultrasonic=Ultrasonic()   
+        self.ultrasonicTimer = None     
 
         # data and locks
         self.data = SensorData()
         self.data_lock = threading.Lock()
-
+    
+    def startUltrasonic(self):
+        # use a timer to measure the distance by a time interval
+        self.ultrasonicTimer = threading.Timer(0.01, self.readUltrasonic)
+        self.ultrasonicTimer.start()
+    
     def readUltrasonic(self):
         # set servo to the home position
-        self.servo.setServoPwm('0', 90)
-        self.servo.setServoPwm('1', 90)
+        self.servo.setServoPwm('0', self.param_servo_pan_home)
+        self.servo.setServoPwm('1', self.param_servo_tilt_home)
         dist = self.ultrasonic.get_distance()
         with self.data_lock:
-            self.data.servoPangle = [90]
-            self.data.servoTangle = [90]
+            self.data.servoPangle = [self.param_servo_pan_home]
+            self.data.servoTangle = [self.param_servo_tilt_home]
             self.data.USread = [dist]
 
         self.ultrasonicTimer = threading.Timer(0.1, self.readUltrasonic)

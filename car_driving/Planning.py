@@ -37,8 +37,8 @@ class MotionPlanning:
         self.car_timer = None
 
         self.param_forward_speed = 800
-        self.param_turn_speed = 1600
-        self.param_speed_adjust = 0.1
+        self.param_turn_speed = 1400 #1600
+        self.param_speed_adjust = 0.15 #0.1
         self.param_turn_sleep_time_short = 0.5
         self.param_turn_sleep_time_long = 2.0
         self.param_backup_sleep_time = 2.0
@@ -117,7 +117,7 @@ class MotionPlanning:
                 # move toward the barrel, but also correcting the error
                 dist_err = arena_floor.center_barrel[5] / arena_floor.img_width - 0.5
                 speed_adjust_ratio = np.abs(dist_err) / self.param_img_ctr_offset * self.param_speed_adjust
-                adjust_speed = self.param_forward_speed * (1 - speed_adjust_ratio)
+                adjust_speed = int(self.param_forward_speed * (1 - speed_adjust_ratio))
                 if dist_err > 0:  # the target is to the right of the center
                     # move forward with right wheels turn a bit slower (turn right slightly)
                     print("MotionPlanning-barrel_catching: move toward barrel, slight right")
