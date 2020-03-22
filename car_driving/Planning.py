@@ -36,6 +36,7 @@ class MotionPlanning:
             self.car = None
         self.car_timer = None
 
+        # parameters
         self.param_car_timeout = 0.5  # second        
         self.param_car_timeout_turn_factor_small = 0.4 #0.2
         self.param_car_timeout_turn_factor_large = 0.7 #0.4
@@ -49,6 +50,9 @@ class MotionPlanning:
 
         self.param_img_ctr_offset = 0.1
 
+        self.param_collision_dist_th = 13  # in cm
+
+        #internal variable
         self.car_timeout = self.param_car_timeout
 
     # step function to run at each time
@@ -61,6 +65,9 @@ class MotionPlanning:
                     time.sleep(0.01)
                 
             self.car_timeout = self.param_car_timeout * time_out_factor
+
+            # avoid collision to wall
+            self.avoid_collision(arena_floor)
 
             # motion planning for each state
             if self.task_state == TaskStates.FindBarrel:
@@ -84,6 +91,20 @@ class MotionPlanning:
             traceback.print_exception(exc_type, exc_value, exc_traceback)
             if self.motor_on:
                 self.car.stop()            
+
+    # avoid collision to wall
+    def avoid_collision(self, arena_floor):
+        if arena_floor.dist_to_obj[0] < self.param_collision_dist_th:    # distance in cm
+            if self.motor_on:
+                self.car.move_backward(self.param_forward_speed)
+                time.sleep(self.param_backup_sleep_time)
+                self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
+                # sleep for long turn
+                time.sleep(self.param_turn_sleep_time_long)
+                self.car.stop()
+            # reset of finding barrel
+            self.task_state = TaskStates.FindBarrel
+
 
     # find a barrel to move
     def barrel_finding(self, arena_floor):
@@ -244,6 +265,7 @@ class MotionPlanning:
                 self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
         # sleep for long turn
         time.sleep(self.param_turn_sleep_time_long)
+        self.car.stop()
         # change to state of finding barrel
         self.task_state = TaskStates.FindBarrel
 
