@@ -77,7 +77,7 @@ class EcoDisaster:
                 
                 # visualize result and save output image
                 if self.visualize:                
-                    #print(arena_floor)
+                    print(arena_floor)
                     # viz results
                     imH, imW = self.bgrimage.shape[0:2]
                     # write results to image

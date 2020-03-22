@@ -38,7 +38,7 @@ class MotionPlanning:
 
         self.param_forward_speed = 800
         self.param_turn_speed = 1400 #1600
-        self.param_speed_adjust = 0.15 #0.1
+        self.param_speed_adjust = 0.1 #0.1
         self.param_turn_sleep_time_short = 0.5
         self.param_turn_sleep_time_long = 2.0
         self.param_backup_sleep_time = 2.0
@@ -132,7 +132,7 @@ class MotionPlanning:
                     # move forward with same speed
                     print("MotionPlanning-barrel_catching: move toward barrel")
                     if self.motor_on:
-                        self.car.move_forward(self.param_forward_speed)
+                        self.car.move_forward(self.param_forward_speed, self.param_forward_speed)
             else:  # barrel is not at the center any more
                 # move back to previous state
                 print("MotionPlanning-barrel_catching: Barrel not in center, go to previous sate: FindBarrel")
@@ -172,6 +172,7 @@ class MotionPlanning:
                 # if the zone is at the center
                 if target_zone_at_center:
                     # check if any obstacles in the path
+                    print("MotionPlanning-barrel_moving: target zone is at center")
                     if np.any(obstacle_loc == 2):
                         print("MotionPlanning-barrel_moving: avoid obstacle")
                         if self.motor_on:
@@ -181,7 +182,7 @@ class MotionPlanning:
                             else:
                                 self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
                             time.sleep(self.param_turn_sleep_time_short)
-                            self.car.move_forward(self.param_forward_speed)
+                    self.car.move_forward(self.param_forward_speed, self.param_forward_speed)
                 elif len(target_zone) > 0:
                     # when the zone is in the view
                     if target_zone[5] > arena_floor.img_width / 2:
