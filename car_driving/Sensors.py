@@ -53,11 +53,15 @@ class Sensors:
         # data and locks
         self.data = SensorData()
         self.data_lock = threading.Lock()
-    
+        
     def startUltrasonic(self):
         # use a timer to measure the distance by a time interval
         self.ultrasonicTimer = threading.Timer(0.01, self.readUltrasonic)
         self.ultrasonicTimer.start()
+    
+    def stopAll(self):
+        if self.ultrasonicTimer is not None:
+            self.ultrasonicTimer.cancel() 
     
     def readUltrasonic(self):
         # set servo to the home position

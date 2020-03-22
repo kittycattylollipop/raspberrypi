@@ -123,5 +123,6 @@ class EcoDisaster:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 traceback.print_exception(exc_type, exc_value, exc_traceback)
                 self.car.stop()
+                self.perception.stopSensors()
                 break
 

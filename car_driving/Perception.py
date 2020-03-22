@@ -2,6 +2,7 @@
 # the goal for this module is to analyze sensor inputs, inference the environments
 
 import sys
+import traceback
 import io
 import time
 from PIL import Image
@@ -106,29 +107,39 @@ class Perception:
         if self.sensor_on:
                 self.sensors.startUltrasonic()
                 time.sleep(0.5)
+    
+    def stopSensors(self):
+        if self.sensor_on:
+            self.sensors.stopAll()
 
     # process for one step
     def step(self, image):
-        # print("Perception-Step: start")
-        # get the sensor inputs
-        if self.sensor_on:
-            ss_out = self.sensors.sensorRead(False)  # don't read all angles
-        else:
-            ss_out = None
+        try:
+            # print("Perception-Step: start")
+            # get the sensor inputs
+            if self.sensor_on:
+                ss_out = self.sensors.sensorRead(False)  # don't read all angles
+            else:
+                ss_out = None
 
-        # analyze image, to get all the zone locations
-        hsvImg = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
-        ratioImg = cmf.rgbRatioImage(image)
-        normImg = cmf.rgbNormImage(image)
+            # analyze image, to get all the zone locations
+            hsvImg = cv2.cvtColor(image, cv2.COLOR_RGB2HSV)
+            ratioImg = cmf.rgbRatioImage(image)
+            normImg = cmf.rgbNormImage(image)
 
-        self.color_zones = self.colorAnalysis(image, ratioImg, normImg, hsvImg)
+            self.color_zones = self.colorAnalysis(image, ratioImg, normImg, hsvImg)
 
-        # inference
-        self.inference(image, ss_out, self.color_zones)
+            # inference
+            self.inference(image, ss_out, self.color_zones)
 
-        # print("Perception-Step: end")
+            # print("Perception-Step: end")
 
-        return self.arena_floor, self.color_zones
+            return self.arena_floor, self.color_zones
+        except:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_exception(exc_type, exc_value, exc_traceback)
+            self.stopSensors()
+            
 
     # the function to inference the world from the sensor inputs
     def inference(self, image, ss_out, color_zones):
