@@ -29,7 +29,7 @@ class Sensors:
     def __init__(self):
         
         self.param_servo_pan_home = 90
-        self.param_servo_tilt_home = 65 #65
+        self.param_servo_tilt_home = 75 # 65
         
         #set up Pins for IRs
         self.IRs = [14, 15, 23]

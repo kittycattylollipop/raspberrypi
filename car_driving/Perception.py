@@ -94,9 +94,9 @@ class Perception:
         # TODO: algorithm parameters
         self.param_img_ctr_minX = 0.3
         self.param_img_ctr_maxX = 0.7
-        self.param_barrel_width_th = 0.5 #0.7 #
+        self.param_barrel_width_th = 0.6 #0.7 #
 
-        self.param_ceiling_high = 0.2
+        self.param_ceiling_high = 0.3
         self.param_ceiling_low = 0.5 #0.75
         
 

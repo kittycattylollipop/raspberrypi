@@ -37,15 +37,16 @@ class MotionPlanning:
         self.car_timer = None
 
         self.param_car_timeout = 0.5  # second        
-        self.param_car_timeout_turn_factor_small = 0.2
-        self.param_car_timeout_turn_factor_large = 0.4
+        self.param_car_timeout_turn_factor_small = 0.4 #0.2
+        self.param_car_timeout_turn_factor_large = 0.7 #0.4
 
         self.param_forward_speed = 800
         self.param_turn_speed = 1600
-        self.param_speed_adjust = 0.05  # 0.1
+        self.param_speed_adjust = 0.03 # 0.05  # 0.1
         self.param_turn_sleep_time_short = 0.5
         self.param_turn_sleep_time_long = 1.0
         self.param_backup_sleep_time = 1.0
+
         self.param_img_ctr_offset = 0.1
 
         self.car_timeout = self.param_car_timeout
@@ -195,7 +196,7 @@ class MotionPlanning:
                         if self.motor_on:
                             #direction = np.random.randint(0, 2)
                             #if direction == 0:
-                            self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
+                            self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
                             #else:
                             #    self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
                             time.sleep(self.param_turn_sleep_time_short)
@@ -217,7 +218,7 @@ class MotionPlanning:
                         self.car_timeout *= self.param_car_timeout_turn_factor_large
                         #direction = np.random.randint(0, 2)
                         #if direction == 0:
-                        self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
+                        self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
                         #else:
                         #    self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
 
