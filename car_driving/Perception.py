@@ -44,6 +44,7 @@ class ArenaFloor:
         self.yellow_zone = np.empty(0)
         self.at_blue_zone = False
         self.at_yellow_zone = False
+        self.at_zone = False
         self.red_barrels_in_view = np.empty((0, ArenaFloor.ZONE_DIM))
         self.green_barrels_in_view = np.empty((0, ArenaFloor.ZONE_DIM))
         self.red_barrel_at_center = np.empty(0)
@@ -68,6 +69,7 @@ class ArenaFloor:
                  + "\n  yellow_zone: %s " % (self.yellow_zone) \
                  + "\n  at_blue_zone: %s " % (self.at_blue_zone) \
                  + "\n  at_yellow_zone: %s " % (self.at_yellow_zone) \
+                 + "\n  at_zone: %s " % (self.at_zone) \
                  + "\n  red_barrels_in_view: %s " % (self.red_barrels_in_view) \
                  + "\n  red_barrel_loc: %s " % (self.red_barrel_loc) \
                  + "\n  green_barrels_in_view: %s " % (self.green_barrels_in_view) \
@@ -96,8 +98,8 @@ class Perception:
         self.param_img_ctr_maxX = 0.7
         self.param_barrel_width_th = 0.6 #0.7 #
 
-        self.param_ceiling_high = 0.3
-        self.param_ceiling_low = 0.5 #0.75
+        self.param_ceiling_high = 0.4 #0.5 # 0.3
+        self.param_ceiling_low = 0.6 # 0.5 #0.75
         
 
         # internal data
@@ -242,6 +244,11 @@ class Perception:
             self.arena_floor.at_yellow_zone = True
         else:
             self.arena_floor.at_yellow_zone = False
+            
+        if ss_out.IRread.sum() <= 1:
+            self.arena_floor.at_zone = True
+        else:
+            self.arena_floor.at_zone = False
 
     # clean up the zones outside of arena
     def cleanup_zones(self, ceiling_top, zones):
@@ -330,8 +337,9 @@ class Perception:
 
     def getGreen(self, image, ratioImg, normImg, hsvImg):
         # use HSV image
-        # hsv_mask = cv2.inRange(hsvImg, (55, 120, 60), (70, 255, 255)).astype('bool')
+        # hsv_mask = cv2.inRange(hsvImg, (55, 120, 60), (75, 255, 255)).astype('bool')
         hsv_mask = cv2.inRange(hsvImg, (55, 120, 60), (75, 255, 255)).astype('bool')
+        hsv_mask2 = cv2.inRange(hsvImg, (70, 65, 120), (75, 255, 255)).astype('bool')
 
         # use Ratio (for dark green)
         ratioTh = np.array([-0.2, 0, 3])
@@ -339,12 +347,12 @@ class Perception:
         ratio_mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh)
 
         # use rgb norm
-        if False:
-            normRGBTh = np.array([-0.2, 0.6, -0.2])
-            imgRGBTh = np.array([-30, 30, -30])
-            norm_mask = cmf.img_mask(normImg, normRGBTh) & cmf.img_mask(image, imgRGBTh)
+        #if False:
+        #    normRGBTh = np.array([-0.2, 0.6, -0.2])
+        #    imgRGBTh = np.array([-30, 30, -30])
+        #    norm_mask = cmf.img_mask(normImg, normRGBTh) & cmf.img_mask(image, imgRGBTh)
 
-        mask = hsv_mask + ratio_mask
+        mask = hsv_mask + hsv_mask2 + ratio_mask
         if self.visualize:
             cmf.visMask_cv(hsv_mask.astype('uint8') * 255, 'green-hsv')
             cmf.visMask_cv(ratio_mask.astype('uint8') * 255, 'green-ratio')
@@ -363,8 +371,8 @@ class Perception:
     def getBlue(self, image, ratioImg, normImg, hsvImg):
 
         # use HSV image
-        # hsv_mask = cv2.inRange(hsvImg, (100, 50, 50), (120, 255, 255)).astype('bool')
-        hsv_mask = cv2.inRange(hsvImg, (100, 50, 50), (130, 255, 255)).astype('bool')
+        # hsv_mask = cv2.inRange(hsvImg, (100, 50, 50), (130, 255, 255)).astype('bool')
+        hsv_mask = cv2.inRange(hsvImg, (95, 50, 50), (130, 255, 255)).astype('bool')
 
         # use Ratio
         ratioTh = np.array([-0.5, -0.2, -0.6])

@@ -38,14 +38,14 @@ class MotionPlanning:
 
         # parameters
         self.param_car_timeout = 0.5  # second        
-        self.param_car_timeout_turn_factor_small = 0.4 #0.2
-        self.param_car_timeout_turn_factor_large = 0.7 #0.4
+        self.param_car_timeout_turn_factor_small = 0.2 # 0.3  #0.2
+        self.param_car_timeout_turn_factor_large = 0.5  # 0.7 (too fast) #0.4
 
         self.param_forward_speed = 800
         self.param_turn_speed = 1600
-        self.param_speed_adjust = 0.03 # 0.05  # 0.1
+        self.param_speed_adjust = 0 # 0.03 # 0.05  # 0.1
         self.param_turn_sleep_time_short = 0.5
-        self.param_turn_sleep_time_long = 1.0
+        self.param_turn_sleep_time_long = 1.5 # 1.0
         self.param_backup_sleep_time = 1.0
 
         self.param_img_ctr_offset = 0.1
@@ -67,7 +67,10 @@ class MotionPlanning:
             self.car_timeout = self.param_car_timeout * time_out_factor
 
             # avoid collision to wall
-            self.avoid_collision(arena_floor)
+            #self.avoid_collision(arena_floor)
+            if arena_floor.at_zone:
+                print("MotionPlanning-step: at zone, need to back up")
+                self.barrel_unloading(arena_floor)
 
             # motion planning for each state
             if self.task_state == TaskStates.FindBarrel:
@@ -254,18 +257,21 @@ class MotionPlanning:
         if self.motor_on:
             self.car.move_backward(self.param_forward_speed)
             time.sleep(self.param_backup_sleep_time)
-        # make a turn to find other barrels
-        if arena_floor.yellow_zone_at_center:
-            print("MotionPlanning-barrel_unloading: turn right from yellow zone")
-            if self.motor_on:
-                self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
-        else:
-            print("MotionPlanning-barrel_unloading: turn left from blue zone")
-            if self.motor_on:
-                self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
-        # sleep for long turn
-        time.sleep(self.param_turn_sleep_time_long)
-        self.car.stop()
+            self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
+            time.sleep(self.param_turn_sleep_time_long)
+            self.car.stop()
+            # make a turn to find other barrels
+            #if arena_floor.yellow_zone_at_center:
+            #    print("MotionPlanning-barrel_unloading: turn right from yellow zone")
+            #    if self.motor_on:
+            #        self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
+            #else:
+            #    print("MotionPlanning-barrel_unloading: turn left from blue zone")
+            #    if self.motor_on:
+            #        self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
+            # sleep for long turn
+            #time.sleep(self.param_turn_sleep_time_long)
+            #self.car.stop()
         # change to state of finding barrel
         self.task_state = TaskStates.FindBarrel
 
@@ -282,3 +288,4 @@ class MotionPlanning:
                     min_dist = dist
                     min_barrel = barrel
         return min_dist, min_barrel
+
