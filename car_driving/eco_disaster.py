@@ -32,7 +32,7 @@ class EcoDisaster:
         self.frame_rate = 10
         self.visualize = False
 
-        self.param_auto_drive_timeout = 0.2
+        self.param_auto_drive_timeout_factor = 1.0
 
     def reset(self):
             self.percOut = [None, None] #output from perception
@@ -109,7 +109,7 @@ class EcoDisaster:
                 counter += 1
 
                 # motion planning and control
-                self.planning.step(arena_floor, self.param_auto_drive_timeout)
+                self.planning.step(arena_floor, self.param_auto_drive_timeout_factor)
 
                 # pause and clear event for the next frame                
                 cur_time = time.time()
