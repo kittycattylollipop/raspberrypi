@@ -94,9 +94,11 @@ class Perception:
         # TODO: algorithm parameters
         self.param_img_ctr_minX = 0.3
         self.param_img_ctr_maxX = 0.7
-        self.param_barrel_width_th = 0.7 #0.4
+        self.param_barrel_width_th = 0.5 #0.7 #
 
-        self.param_ceiling_ub = 0.5 #0.75
+        self.param_ceiling_high = 0.2
+        self.param_ceiling_low = 0.5 #0.75
+        
 
         # internal data
         self.arena_floor = ArenaFloor()
@@ -247,18 +249,18 @@ class Perception:
         return zones_in
 
     def find_arena_ceiling(self, color_zones, im_h):
-        ceiling = 0
+        ceiling = self.param_ceiling_high * im_h
         for zone in color_zones.blueZones:
-            if (zone[1] < self.param_ceiling_ub * im_h) & (zone[1] > ceiling):
+            if (zone[1] < self.param_ceiling_low * im_h) & (zone[1] > ceiling):
                 ceiling = zone[1]
         # maxblueZone = np.argmax(color_zones.blueZones[:, 4])
         # if color_zones.blueZones[maxblueZone, 1] < self.para_ceiling_ub * im_h:
         #    ceiling = np.maximum(color_zones.blueZones[maxblueZone, 1], ceiling)
         for zone in color_zones.yellowZones:
-            if (zone[1] < self.param_ceiling_ub * im_h) & (zone[1] > ceiling):
+            if (zone[1] < self.param_ceiling_low * im_h) & (zone[1] > ceiling):
                 ceiling = zone[1]
         for zone in color_zones.blackZones:
-            if (zone[1] < self.param_ceiling_ub * im_h) & (zone[1] > ceiling):
+            if (zone[1] < self.param_ceiling_low * im_h) & (zone[1] > ceiling):
                 ceiling = zone[1]
         return np.int(ceiling)
 

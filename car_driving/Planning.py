@@ -37,8 +37,8 @@ class MotionPlanning:
         self.car_timer = None
 
         self.param_car_timeout = 0.5  # second        
-        self.param_car_timeout_turn_factor_small = 0.1
-        self.param_car_timeout_turn_factor_large = 0.2
+        self.param_car_timeout_turn_factor_small = 0.2
+        self.param_car_timeout_turn_factor_large = 0.4
 
         self.param_forward_speed = 800
         self.param_turn_speed = 1600
@@ -193,11 +193,11 @@ class MotionPlanning:
                     if np.any(obstacle_loc == 2):
                         print("MotionPlanning-barrel_moving: avoid obstacle")
                         if self.motor_on:
-                            direction = np.random.randint(0, 2)
-                            if direction == 0:
-                                self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
-                            else:
-                                self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
+                            #direction = np.random.randint(0, 2)
+                            #if direction == 0:
+                            self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
+                            #else:
+                            #    self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
                             time.sleep(self.param_turn_sleep_time_short)
                     self.car.move_forward(self.param_forward_speed, self.param_forward_speed)
                 elif len(target_zone) > 0:
@@ -215,11 +215,11 @@ class MotionPlanning:
                     print("MotionPlanning-barrel_moving: looking for target zone")
                     if self.motor_on:
                         self.car_timeout *= self.param_car_timeout_turn_factor_large
-                        direction = np.random.randint(0, 2)
-                        if direction == 0:
-                            self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
-                        else:
-                            self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
+                        #direction = np.random.randint(0, 2)
+                        #if direction == 0:
+                        self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
+                        #else:
+                        #    self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
 
     # actions for unloading the barrel
     def barrel_unloading(self, arena_floor):
