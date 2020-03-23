@@ -37,9 +37,9 @@ class MotionPlanning:
         self.car_timer = None
 
         # parameters
-        self.param_car_timeout = 0.5  # second        
-        self.param_car_timeout_turn_factor_small = 0.2 # 0.3  #0.2
-        self.param_car_timeout_turn_factor_large = 0.5  # 0.7 (too fast) #0.4
+        self.param_car_timeout = 0.8 # 0.5  # second
+        self.param_car_timeout_turn_factor_small = 0.15 # 0.3  #0.2
+        self.param_car_timeout_turn_factor_large = 0.4  # 0.7 (too fast) #0.4
 
         self.param_forward_speed = 800
         self.param_turn_speed = 1600
@@ -68,7 +68,9 @@ class MotionPlanning:
 
             # avoid collision to wall
             #self.avoid_collision(arena_floor)
-            if arena_floor.at_zone:
+
+            # check if in the zone but not the unloading state
+            if arena_floor.at_zone and self.task_state != TaskStates.UnloadBarrel:
                 print("MotionPlanning-step: at zone, need to back up")
                 self.barrel_unloading(arena_floor)
 
@@ -238,13 +240,20 @@ class MotionPlanning:
                             self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
                 else:  # if the zone is not in the view
                     print("MotionPlanning-barrel_moving: looking for target zone")
-                    if self.motor_on:
-                        self.car_timeout *= self.param_car_timeout_turn_factor_large
-                        #direction = np.random.randint(0, 2)
-                        #if direction == 0:
+                    self.car_timeout *= self.param_car_timeout_turn_factor_large
+                    # if the other color zone is in view then it give us a clue
+                    if target_zone_color == arena_floor.COLOR_BLUE and len(arena_floor.yellow_zone) > 0:
+                        # turn left to find blue zone
+                        print("             yellow zone is in the view, turn left")
+                        if self.motor_on:
+                            self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
+                    elif target_zone_color == arena_floor.COLOR_YELLOW and len(arena_floor.blue_zone) > 0:
+                        # turn right to find yellow zone
+                        print("             blue zone is in the view, turn right")
+                        if self.motor_on:
+                            self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
+                    elif self.motor_on:
                         self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
-                        #else:
-                        #    self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
 
     # actions for unloading the barrel
     def barrel_unloading(self, arena_floor):

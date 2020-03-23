@@ -22,7 +22,7 @@ class Ultrasonic:
      
     def get_distance(self):
         distance_cm=[0,0,0,0,0]
-        for i in range(3):
+        for i in range(len(distance_cm)):
             self.send_trigger_pulse()
             self.wait_for_echo(True,10000)
             start = time.time()
@@ -30,8 +30,9 @@ class Ultrasonic:
             finish = time.time()
             pulse_len = finish-start
             distance_cm[i] = pulse_len/0.000058
-        distance_cm=sorted(distance_cm)
-        return int(distance_cm[2])
+        distance_cm = sorted(distance_cm)
+        return int(distance_cm[int(len(distance_cm)/2)]) # return median
+
     def run_motor(self,L,M,R):
         if (L < 30 and M < 30 and R <30) or M < 30 :
             self.PWM.setMotorModel(1450,1450,1450,1450) 
