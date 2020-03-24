@@ -70,9 +70,10 @@ class MotionPlanning:
             #self.avoid_collision(arena_floor)
 
             # check if in the zone but not the unloading state
-            if arena_floor.at_zone and self.task_state != TaskStates.UnloadBarrel:
+            if arena_floor.at_zone and self.task_state != TaskStates.UnloadBarrel and self.task_state != TaskStates.MoveBarrel:
                 print("MotionPlanning-step: at zone, need to back up")
                 self.barrel_unloading(arena_floor)
+                return 
 
             # motion planning for each state
             if self.task_state == TaskStates.FindBarrel:

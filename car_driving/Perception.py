@@ -98,10 +98,13 @@ class Perception:
         self.param_img_ctr_maxX = 0.7
         self.param_barrel_width_th = 0.6 #0.7 #
 
-        self.param_ceiling_high = 0.4 #0.5 # 0.3
-        self.param_ceiling_low = 0.6 # 0.5 #0.75
+        self.param_ceiling_high_near = 0.4
+        self.param_ceiling_low_near = 0.6
+        self.param_ceiling_high_mid = 0.4 # 0.4 #0.5 # 0.3
+        self.param_ceiling_low_mid = 0.6 # 0.5 #0.75
+        self.param_ceiling_high_far = 0.4
+        self.param_ceiling_low_far = 0.6
         
-
         # internal data
         self.arena_floor = ArenaFloor()
         self.color_zones = ColorZones()
@@ -156,7 +159,7 @@ class Perception:
             self.arena_floor.dist_to_obj[0] = ss_out.USread[0]
 
         # find the top of the arena by check black zone, yellow, or blue zone
-        self.arena_floor.arena_ceiling = self.find_arena_ceiling(color_zones, im_h)
+        self.arena_floor.arena_ceiling = self.find_arena_ceiling(color_zones, im_h, self.arena_floor.dist_to_obj[0])
 
         # clean up all outside zones
         color_zones.blackZones = self.cleanup_zones(self.arena_floor.arena_ceiling, color_zones.blackZones)
@@ -255,19 +258,26 @@ class Perception:
         zones_in = zones[(zones[:, 6] > ceiling_top), :]
         return zones_in
 
-    def find_arena_ceiling(self, color_zones, im_h):
-        ceiling = self.param_ceiling_high * im_h
+    def find_arena_ceiling(self, color_zones, im_h, dist_to_wall):
+        if dist_to_wall > 50:  # in cm 
+            ceiling = self.param_ceiling_high_far * im_h
+            ceiling_low = self.param_ceiling_low_far * im_h
+        elif dist_to_wall <20 :  # in cm 
+            ceiling = self.param_ceiling_high_near * im_h
+            ceiling_low = self.param_ceiling_low_near * im_h
+        else:
+            ceiling = self.param_ceiling_high_mid * im_h
+            ceiling_low = self.param_ceiling_low_mid * im_h
+        
+        
         for zone in color_zones.blueZones:
-            if (zone[1] < self.param_ceiling_low * im_h) & (zone[1] > ceiling):
+            if (zone[1] < ceiling_low) & (zone[1] > ceiling):
                 ceiling = zone[1]
-        # maxblueZone = np.argmax(color_zones.blueZones[:, 4])
-        # if color_zones.blueZones[maxblueZone, 1] < self.para_ceiling_ub * im_h:
-        #    ceiling = np.maximum(color_zones.blueZones[maxblueZone, 1], ceiling)
         for zone in color_zones.yellowZones:
-            if (zone[1] < self.param_ceiling_low * im_h) & (zone[1] > ceiling):
+            if (zone[1] < ceiling_low) & (zone[1] > ceiling):
                 ceiling = zone[1]
         for zone in color_zones.blackZones:
-            if (zone[1] < self.param_ceiling_low * im_h) & (zone[1] > ceiling):
+            if (zone[1] < ceiling_low) & (zone[1] > ceiling):
                 ceiling = zone[1]
         return np.int(ceiling)
 
@@ -397,7 +407,8 @@ class Perception:
 
     def getYellow(self, image, ratioImg, normImg, hsvImg):
         # use HSV image        
-        hsv_mask = cv2.inRange(hsvImg, (25, 50, 50), (35, 255, 255)).astype('bool')
+        #hsv_mask = cv2.inRange(hsvImg, (25, 50, 50), (35, 255, 255)).astype('bool')
+        hsv_mask = cv2.inRange(hsvImg, (20, 50, 50), (40, 255, 255)).astype('bool')
         
         # use Ratio
         #ratioTh1 = np.array([-1, 3, 3])
