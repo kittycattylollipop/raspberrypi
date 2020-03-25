@@ -47,7 +47,6 @@ class ArenaFloor:
         self.at_zone = False
         self.red_barrels_in_view = np.empty((0, ArenaFloor.ZONE_DIM))
         self.green_barrels_in_view = np.empty((0, ArenaFloor.ZONE_DIM))
-        self.red_barrel_at_center = np.empty(0)
         # a vector representing where the barrels are
         # (0: outside of center zone, 1: in center zone, 2: at center)
         self.red_barrel_loc = np.empty(0)
@@ -98,12 +97,12 @@ class Perception:
         self.param_img_ctr_maxX = 0.7
         self.param_barrel_width_th = 0.6 #0.7 #
 
-        self.param_ceiling_high_near = 0.4
-        self.param_ceiling_low_near = 0.6
-        self.param_ceiling_high_mid = 0.4 # 0.4 #0.5 # 0.3
-        self.param_ceiling_low_mid = 0.6 # 0.5 #0.75
-        self.param_ceiling_high_far = 0.4
-        self.param_ceiling_low_far = 0.6
+        self.param_ceiling_high_near = 0.3
+        self.param_ceiling_low_near = 0.5
+        self.param_ceiling_high_mid = 0.4  # 0.4 #0.5 # 0.3
+        self.param_ceiling_low_mid = 0.6  # 0.5 #0.75
+        self.param_ceiling_high_far = 0.5
+        self.param_ceiling_low_far = 0.7
         
         # internal data
         self.arena_floor = ArenaFloor()
@@ -248,7 +247,7 @@ class Perception:
         else:
             self.arena_floor.at_yellow_zone = False
             
-        if ss_out.IRread.sum() <= 1:
+        if self.sensor_on and ss_out.IRread.sum() <= 1:
             self.arena_floor.at_zone = True
         else:
             self.arena_floor.at_zone = False

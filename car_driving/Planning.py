@@ -50,6 +50,8 @@ class MotionPlanning:
 
         self.param_img_ctr_offset = 0.1
 
+        self.param_far_object_width =  28 #  in pixels
+
         self.param_collision_dist_th = 13  # in cm
 
         #internal variable
@@ -67,10 +69,12 @@ class MotionPlanning:
             self.car_timeout = self.param_car_timeout * time_out_factor
 
             # avoid collision to wall
-            #self.avoid_collision(arena_floor)
+            if self.avoid_collision(arena_floor):
+                return
 
             # check if in the zone but not the unloading state
-            if arena_floor.at_zone and self.task_state != TaskStates.UnloadBarrel and self.task_state != TaskStates.MoveBarrel:
+            if arena_floor.at_zone and self.task_state != TaskStates.UnloadBarrel \
+                    and self.task_state != TaskStates.MoveBarrel:
                 print("MotionPlanning-step: at zone, need to back up")
                 self.barrel_unloading(arena_floor)
                 return 
@@ -78,7 +82,8 @@ class MotionPlanning:
             # motion planning for each state
             if self.task_state == TaskStates.FindBarrel:
                 print("MotionPlanning-step: task state == FindBarrel")
-                self.barrel_finding(arena_floor)
+                self.barrel_finding_closest_first(arena_floor)
+                # self.barrel_finding_center_first(arena_floor)
             elif self.task_state == TaskStates.CatchBarrel:
                 print("MotionPlanning-step: task state == CatchBarrel")
                 self.barrel_catching(arena_floor)
@@ -110,13 +115,60 @@ class MotionPlanning:
                 self.car.stop()
             # reset of finding barrel
             self.task_state = TaskStates.FindBarrel
-
+            return True
+        else:
+            return False
 
     # find a barrel to move
-    def barrel_finding(self, arena_floor):
+    def barrel_finding_closest_first(self, arena_floor):
+        if len(arena_floor.red_barrels_in_view) == 0 and len(arena_floor.green_barrels_in_view) == 0:
+            # no barrels in view
+            print("MotionPlanning-barrel_finding: no barrel in view, turn to find barrel")
+            self.car_timeout *= self.param_car_timeout_turn_factor_large
+            if self.motor_on:
+                self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
+        elif len(arena_floor.center_barrel) > 0:
+            # barrel at image center, move to next state
+            print("MotionPlanning-barrel_finding: found barrel, go to CatchBarrel state")
+            self.task_state = TaskStates.CatchBarrel
+            self.barrel_catching(arena_floor)
+        else:
+            # barrel in view, find the closest one (the widest)
+            red_max_width, red_closest_barrel, red_ind = self.closest_barrel_in_view(arena_floor.red_barrels_in_view)
+            green_max_width, green_closest_barrel, green_ind = self.closest_barrel_in_view(arena_floor.green_barrels_in_view)
+            if red_max_width > green_max_width:
+                max_width = red_max_width
+                closest_barrel = red_closest_barrel
+                barrel_ind = red_ind
+                barrels_loc = arena_floor.red_barrel_loc
+            else:
+                max_width = green_max_width
+                closest_barrel = green_closest_barrel
+                barrel_ind = green_ind
+                barrels_loc = arena_floor.green_barrel_loc
+            # if the closest barrel is in center zone, but far away, move closer first
+            if barrels_loc[barrel_ind] > 0 and max_width <= self.param_far_object_width:
+                if self.motor_on:
+                    print("MotionPlanning-barrel_finding: closest barrel too far, move closer")
+                    self.car.move_forward(self.param_forward_speed, self.param_forward_speed)
+            else:
+                # turn to move the barrel to the center
+                # reduce the timer
+                self.car_timeout *= self.param_car_timeout_turn_factor_small
+                if closest_barrel[5] > arena_floor.img_width / 2:
+                    print("MotionPlanning-barrel_finding: barrel in view, turn right to barrel")
+                    if self.motor_on:
+                        self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
+                else:
+                    print("MotionPlanning-barrel_finding: barrel in view, turn left to barrel")
+                    if self.motor_on:
+                        self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
+
+    # find a barrel to move
+    def barrel_finding_center_first(self, arena_floor):
         if len(arena_floor.red_barrels_in_view) == 0 and len(arena_floor.green_barrels_in_view) == 0:
             #no barrels in view
-            print("MotionPlanning-barrel_finding: turn to find barrel")
+            print("MotionPlanning-barrel_finding: no barrel in view, turn to find barrel")
             self.car_timeout *= self.param_car_timeout_turn_factor_large
             if self.motor_on:
                 self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
@@ -140,11 +192,11 @@ class MotionPlanning:
                 min_dist = min_green_dist
                 min_barrel = min_green_barrel
             if min_barrel[5] > arena_floor.img_width / 2:
-                print("MotionPlanning-barrel_finding: turn right to barrel")
+                print("MotionPlanning-barrel_finding: barrel in view, turn right to barrel")
                 if self.motor_on:
                     self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
             else:
-                print("MotionPlanning-barrel_finding: turn left to barrel")
+                print("MotionPlanning-barrel_finding: barrel in view, turn left to barrel")
                 if self.motor_on:
                     self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
 
@@ -299,3 +351,9 @@ class MotionPlanning:
                     min_barrel = barrel
         return min_dist, min_barrel
 
+    # find the barrel that is the closest (the widest)
+    def closest_barrel_in_view(self, barrels):
+        idx = np.argmax(barrels[:, 2])
+        max_width = barrels[idx, 2]
+        closest_barrel = barrels[idx, :]
+        return max_width, closest_barrel, idx
