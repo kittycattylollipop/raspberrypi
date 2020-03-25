@@ -97,12 +97,15 @@ class Perception:
         self.param_img_ctr_maxX = 0.7
         self.param_barrel_width_th = 0.6 #0.7 #
 
-        self.param_ceiling_high_near = 0.3
+        self.param_ceiling_high_near = 0.2 # 0.3
         self.param_ceiling_low_near = 0.5
         self.param_ceiling_high_mid = 0.4  # 0.4 #0.5 # 0.3
         self.param_ceiling_low_mid = 0.6  # 0.5 #0.75
         self.param_ceiling_high_far = 0.5
         self.param_ceiling_low_far = 0.7
+        
+        self.param_dist_to_wall_far = 50 # cm 
+        self.param_dist_to_wall_near = 30 # cm 
         
         # internal data
         self.arena_floor = ArenaFloor()
@@ -258,10 +261,10 @@ class Perception:
         return zones_in
 
     def find_arena_ceiling(self, color_zones, im_h, dist_to_wall):
-        if dist_to_wall > 50:  # in cm 
+        if dist_to_wall > self.param_dist_to_wall_far:  # in cm 
             ceiling = self.param_ceiling_high_far * im_h
             ceiling_low = self.param_ceiling_low_far * im_h
-        elif dist_to_wall <20 :  # in cm 
+        elif dist_to_wall < self.param_dist_to_wall_near :  # in cm 
             ceiling = self.param_ceiling_high_near * im_h
             ceiling_low = self.param_ceiling_low_near * im_h
         else:

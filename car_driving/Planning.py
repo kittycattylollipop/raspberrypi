@@ -37,9 +37,10 @@ class MotionPlanning:
         self.car_timer = None
 
         # parameters
-        self.param_car_timeout = 0.8 # 0.5  # second
-        self.param_car_timeout_turn_factor_small = 0.15 # 0.3  #0.2
-        self.param_car_timeout_turn_factor_large = 0.4  # 0.7 (too fast) #0.4
+        self.param_car_timeout = 0.5 # 0.8 # 0.5  # second
+        self.param_car_timeout_forward_large = 0.7
+        self.param_car_timeout_turn_small = 0.1 # 0.3  #0.2
+        self.param_car_timeout_turn_large = 0.25  # 0.7 (too fast) #0.4
 
         self.param_forward_speed = 800
         self.param_turn_speed = 1600
@@ -66,7 +67,7 @@ class MotionPlanning:
                 while self.car_timer.is_alive():
                     time.sleep(0.01)
                 
-            self.car_timeout = self.param_car_timeout * time_out_factor
+            self.car_timeout = self.param_car_timeout 
 
             # avoid collision to wall
             if self.avoid_collision(arena_floor):
@@ -94,7 +95,7 @@ class MotionPlanning:
                 print("MotionPlanning-step: task state == UnloadBarrel")
                 self.barrel_unloading(arena_floor)
 
-            if self.car_timeout > 0 and self.motor_on:
+            if self.car_timeout > 0 and time_out_factor > 0 and self.motor_on:
                 self.car_timer = threading.Timer(self.car_timeout, self.car.stop)
                 self.car_timer.start()
         except:
@@ -124,10 +125,10 @@ class MotionPlanning:
         if len(arena_floor.red_barrels_in_view) == 0 and len(arena_floor.green_barrels_in_view) == 0:
             # no barrels in view
             print("MotionPlanning-barrel_finding: no barrel in view, turn to find barrel")
-            self.car_timeout *= self.param_car_timeout_turn_factor_large
+            self.car_timeout = self.param_car_timeout_turn_large
             if self.motor_on:
                 self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
-        elif len(arena_floor.center_barrel) > 0:
+        elif len(arena_floor.center_barrel) > 0 :
             # barrel at image center, move to next state
             print("MotionPlanning-barrel_finding: found barrel, go to CatchBarrel state")
             self.task_state = TaskStates.CatchBarrel
@@ -145,16 +146,21 @@ class MotionPlanning:
                 max_width = green_max_width
                 closest_barrel = green_closest_barrel
                 barrel_ind = green_ind
-                barrels_loc = arena_floor.green_barrel_loc
-            # if the closest barrel is in center zone, but far away, move closer first
+                barrels_loc = arena_floor.green_barrel_loc            
             if barrels_loc[barrel_ind] > 0 and max_width <= self.param_far_object_width:
                 if self.motor_on:
                     print("MotionPlanning-barrel_finding: closest barrel too far, move closer")
+                    self.car_timeout = self.param_car_timeout_forward_large
+                    self.car.move_forward(self.param_forward_speed, self.param_forward_speed)
+            elif abs(closest_barrel[5] / arena_floor.img_width - 0.5) < self.param_img_ctr_offset:
+                if self.motor_on:
+                    print("MotionPlanning-barrel_finding: barrel close to center, move closer")
+                    self.car_timeout = self.param_car_timeout
                     self.car.move_forward(self.param_forward_speed, self.param_forward_speed)
             else:
                 # turn to move the barrel to the center
                 # reduce the timer
-                self.car_timeout *= self.param_car_timeout_turn_factor_small
+                self.car_timeout = self.param_car_timeout_turn_small
                 if closest_barrel[5] > arena_floor.img_width / 2:
                     print("MotionPlanning-barrel_finding: barrel in view, turn right to barrel")
                     if self.motor_on:
@@ -169,7 +175,7 @@ class MotionPlanning:
         if len(arena_floor.red_barrels_in_view) == 0 and len(arena_floor.green_barrels_in_view) == 0:
             #no barrels in view
             print("MotionPlanning-barrel_finding: no barrel in view, turn to find barrel")
-            self.car_timeout *= self.param_car_timeout_turn_factor_large
+            self.car_timeout = self.param_car_timeout_turn_large
             if self.motor_on:
                 self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
         elif len(arena_floor.center_barrel) > 0:
@@ -180,7 +186,7 @@ class MotionPlanning:
         else:
             # barrel in view, move to center
             # reduce the timer
-            self.car_timeout *= self.param_car_timeout_turn_factor_small
+            self.car_timeout = self.param_car_timeout_turn_small
             min_red_dist, min_red_barrel = self.min_dist_to_center(arena_floor.red_barrels_in_view,
                                                                    arena_floor.img_width, arena_floor.img_height)
             min_green_dist, min_green_barrel = self.min_dist_to_center(arena_floor.green_barrels_in_view,
@@ -202,6 +208,7 @@ class MotionPlanning:
 
     # actions for catching the barrel
     def barrel_catching(self, arena_floor):
+        self.car_timeout = self.param_car_timeout
         if arena_floor.barrel_in_arm:  # barrel is already in arm
             # move to the next state
             print("MotionPlanning-barrel_catching: barrel in arm, move to next state: MoveBarrel")
@@ -234,7 +241,7 @@ class MotionPlanning:
                 # move back to previous state
                 print("MotionPlanning-barrel_catching: Barrel not in center, go to previous sate: FindBarrel")
                 self.task_state = TaskStates.FindBarrel
-                self.barrel_finding(arena_floor)
+                self.barrel_finding_closest_first(arena_floor)
 
     # moving barrels to the zone
     def barrel_moving(self, arena_floor):
@@ -279,10 +286,13 @@ class MotionPlanning:
                             #else:
                             #    self.car.turn_right(self.param_turn_speed, self.param_turn_speed)
                             time.sleep(self.param_turn_sleep_time_short)
+                        self.car_timeout = self.param_car_timeout
+                    else:
+                        self.car_timeout = self.param_car_timeout_forward_large
                     self.car.move_forward(self.param_forward_speed, self.param_forward_speed)
                 elif len(target_zone) > 0:
                     # when the zone is in the view
-                    self.car_timeout *= self.param_car_timeout_turn_factor_small
+                    self.car_timeout = self.param_car_timeout_turn_small
                     if target_zone[5] > arena_floor.img_width / 2:
                         print("MotionPlanning-barrel_moving: turn right to move target zone to center")
                         if self.motor_on:
@@ -293,7 +303,7 @@ class MotionPlanning:
                             self.car.turn_left(self.param_turn_speed, self.param_turn_speed)
                 else:  # if the zone is not in the view
                     print("MotionPlanning-barrel_moving: looking for target zone")
-                    self.car_timeout *= self.param_car_timeout_turn_factor_large
+                    self.car_timeout = self.param_car_timeout_turn_large
                     # if the other color zone is in view then it give us a clue
                     if target_zone_color == arena_floor.COLOR_BLUE and len(arena_floor.yellow_zone) > 0:
                         # turn left to find blue zone
@@ -353,7 +363,15 @@ class MotionPlanning:
 
     # find the barrel that is the closest (the widest)
     def closest_barrel_in_view(self, barrels):
-        idx = np.argmax(barrels[:, 2])
-        max_width = barrels[idx, 2]
-        closest_barrel = barrels[idx, :]
+        if len(barrels) > 0:
+            idx = np.argmax(barrels[:, 2])
+            max_width = barrels[idx, 2]
+            closest_barrel = barrels[idx, :]
+        else: 
+            idx = -1
+            max_width = 0
+            closest_barrel = np.empty(0)
         return max_width, closest_barrel, idx
+
+
+
