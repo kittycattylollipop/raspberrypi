@@ -89,8 +89,18 @@ class Server:
             with picamera.PiCamera() as camera:
                 #camera.resolution = (400,300)      # pi camera resolution
                 camera.resolution = (384, 288)  # pi camera resolution
-                camera.framerate = 20  # 30               # 15 frames/sec
-                time.sleep(2)                       # give 2 secs for camera to initilize
+                camera.framerate = 30  # 30               # 15 frames/sec
+                # Set ISO to the desired value
+                camera.iso = 400
+                # Wait for the automatic gain control to settle
+                time.sleep(2)
+                # Now fix the exposure values
+                camera.shutter_speed = camera.exposure_speed
+                camera.exposure_mode = 'off'
+                g = camera.awb_gains
+                camera.awb_mode = 'off'
+                camera.awb_gains = g
+
                 bgrimg = np.empty((288*384*3),dtype=np.uint8)  #  for python 2.x only 1-dim accpeted             
                 #stream = io.BytesIO()
                 # send jpeg format video stream
