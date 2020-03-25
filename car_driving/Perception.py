@@ -104,8 +104,8 @@ class Perception:
         self.param_ceiling_high_far = 0.5
         self.param_ceiling_low_far = 0.7
         
-        self.param_dist_to_wall_far = 50 # cm 
-        self.param_dist_to_wall_near = 30 # cm 
+        self.param_dist_to_wall_far = 120 # cm 
+        self.param_dist_to_wall_near = 40 # cm 
         
         # internal data
         self.arena_floor = ArenaFloor()
@@ -384,8 +384,9 @@ class Perception:
 
         # use HSV image
         # hsv_mask = cv2.inRange(hsvImg, (100, 50, 50), (130, 255, 255)).astype('bool')
-        hsv_mask = cv2.inRange(hsvImg, (95, 50, 50), (130, 255, 255)).astype('bool')
-
+        # hsv_mask = cv2.inRange(hsvImg, (95, 50, 50), (130, 255, 255)).astype('bool')
+        hsv_mask = cv2.inRange(hsvImg, (95, 70, 100), (130, 255, 255)).astype('bool')
+        
         # use Ratio
         ratioTh = np.array([-0.5, -0.2, -0.6])
         rgbTh = np.array([-20, -50, 40])
@@ -398,7 +399,7 @@ class Perception:
         #   cmf.visMask_cv(mask.astype('uint8') * 255, 'blue-mask')
 
         # connected components
-        sizeTh = 800
+        sizeTh = 1000 #800
         labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
 
         # visualize
@@ -409,8 +410,8 @@ class Perception:
 
     def getYellow(self, image, ratioImg, normImg, hsvImg):
         # use HSV image        
-        #hsv_mask = cv2.inRange(hsvImg, (25, 50, 50), (35, 255, 255)).astype('bool')
-        hsv_mask = cv2.inRange(hsvImg, (20, 50, 50), (40, 255, 255)).astype('bool')
+        #hsv_mask = cv2.inRange(hsvImg, (20, 50, 50), (40, 255, 255)).astype('bool')
+        hsv_mask = cv2.inRange(hsvImg, (20, 50, 50), (37, 255, 255)).astype('bool')
         
         # use Ratio
         #ratioTh1 = np.array([-1, 3, 3])
@@ -426,7 +427,7 @@ class Perception:
         
         # cmf.visMask(image, mask)
         # connected components
-        sizeTh = 800
+        sizeTh = 1000 #800
         labCount, labels_im, connStats, connCent = cmf.maskLabeling(mask, sizeTh)
 
         # visualize

@@ -89,13 +89,16 @@ class Server:
             with picamera.PiCamera() as camera:
                 #camera.resolution = (400,300)      # pi camera resolution
                 camera.resolution = (384, 288)  # pi camera resolution
-                camera.framerate = 30  # 30               # 15 frames/sec
+                camera.framerate = 5  # 30               # 15 frames/sec
                 # Set ISO to the desired value
                 camera.iso = 400
                 # Wait for the automatic gain control to settle
                 time.sleep(2)
-                # Now fix the exposure values
-                camera.shutter_speed = camera.exposure_speed
+                # Now fix the exposure values      
+                print("camera.framerate = %s " % camera.framerate)          
+                print("camera.exposure_speed = %s " % camera.exposure_speed)
+                camera.shutter_speed = int(camera.exposure_speed*3)                
+                print("Setting shuuter to %s" % camera.shutter_speed)
                 camera.exposure_mode = 'off'
                 g = camera.awb_gains
                 camera.awb_mode = 'off'
