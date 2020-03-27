@@ -106,7 +106,10 @@ class Perception:
         
         self.param_dist_to_wall_far = 120 # cm 
         self.param_dist_to_wall_near = 40 # cm 
-        
+
+        # self.param_at_zone_IR_value = False   # the non-black color zone (blue/yellow)
+        self.param_at_zone_IR_value = True    # the black color zone (for home testing, non-black floor/black zone)
+
         # internal data
         self.arena_floor = ArenaFloor()
         self.color_zones = ColorZones()
@@ -221,8 +224,14 @@ class Perception:
             self.arena_floor.blue_zone_at_center = False
             self.arena_floor.blue_zone = np.empty(0)
 
+        #check if car at zone
+        if self.sensor_on and sum(ss_out.IRread == self.param_at_zone_IR_value) >=2:
+            self.arena_floor.at_zone = True
+        else:
+            self.arena_floor.at_zone = False
+
         # check if at blue zone
-        if self.sensor_on and self.arena_floor.blue_zone_at_center and ss_out.IRread.sum() <= 1:
+        if self.sensor_on and self.arena_floor.blue_zone_at_center and self.arena_floor.at_zone:
             self.arena_floor.at_blue_zone = True
         else:
             self.arena_floor.at_blue_zone = False
@@ -245,15 +254,10 @@ class Perception:
             self.arena_floor.yellow_zone = np.empty(0)
 
         # check if at yellow zone
-        if self.sensor_on and self.arena_floor.yellow_zone_at_center and ss_out.IRread.sum() <= 1:
+        if self.sensor_on and self.arena_floor.yellow_zone_at_center and self.arena_floor.at_zone:
             self.arena_floor.at_yellow_zone = True
         else:
             self.arena_floor.at_yellow_zone = False
-            
-        if self.sensor_on and ss_out.IRread.sum() <= 1:
-            self.arena_floor.at_zone = True
-        else:
-            self.arena_floor.at_zone = False
 
     # clean up the zones outside of arena
     def cleanup_zones(self, ceiling_top, zones):
