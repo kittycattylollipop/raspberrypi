@@ -328,17 +328,19 @@ class Perception:
         # use HSV image
         mask = []
         if useHSV:
-            im_red_mask_1 = cv2.inRange(hsvImg, (0, 100, 30), (15, 255, 255))
-            im_red_mask_2 = cv2.inRange(hsvImg, (165, 100, 30), (180, 255, 255))
+            #im_red_mask_1 = cv2.inRange(hsvImg, (0, 100, 80), (15, 255, 255))
+            #im_red_mask_2 = cv2.inRange(hsvImg, (165, 100, 80), (180, 255, 255))
+            im_red_mask_1 = cv2.inRange(hsvImg, (0, 130, 80), (15, 255, 255))
+            im_red_mask_2 = cv2.inRange(hsvImg, (165, 130, 80), (180, 255, 255))
             im_red_mask_1 = im_red_mask_1.astype('bool')
             im_red_mask_2 = im_red_mask_2.astype('bool')
             hsv_mask = im_red_mask_1 + im_red_mask_2
         
         # use Ratio
-        if useRatio:
-            ratioTh = [2, 2, 0]
-            rgbTh = [50, -50, -50]
-            ratio_mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh)
+        #if useRatio:
+        #    ratioTh = [2, 2, 0]
+        #    rgbTh = [50, -50, -50]
+        #    ratio_mask = cmf.img_mask(image, rgbTh) & cmf.img_mask(ratioImg, ratioTh)
 
         mask = hsv_mask #+ ratio_mask
         # connected components
@@ -414,8 +416,8 @@ class Perception:
 
     def getYellow(self, image, ratioImg, normImg, hsvImg):
         # use HSV image        
-        #hsv_mask = cv2.inRange(hsvImg, (20, 50, 50), (40, 255, 255)).astype('bool')
-        hsv_mask = cv2.inRange(hsvImg, (20, 50, 50), (37, 255, 255)).astype('bool')
+        #hsv_mask = cv2.inRange(hsvImg, (20, 50, 50), (37, 255, 255)).astype('bool')
+        hsv_mask = cv2.inRange(hsvImg, (20, 120, 100), (37, 255, 255)).astype('bool')
         
         # use Ratio
         #ratioTh1 = np.array([-1, 3, 3])
