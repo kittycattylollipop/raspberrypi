@@ -328,10 +328,10 @@ class Perception:
         # use HSV image
         mask = []
         if useHSV:
-            #im_red_mask_1 = cv2.inRange(hsvImg, (0, 100, 80), (15, 255, 255))
-            #im_red_mask_2 = cv2.inRange(hsvImg, (165, 100, 80), (180, 255, 255))
-            im_red_mask_1 = cv2.inRange(hsvImg, (0, 130, 80), (15, 255, 255))
-            im_red_mask_2 = cv2.inRange(hsvImg, (165, 130, 80), (180, 255, 255))
+            #im_red_mask_1 = cv2.inRange(hsvImg, (0, 130, 80), (15, 255, 255))
+            #im_red_mask_2 = cv2.inRange(hsvImg, (165, 130, 80), (180, 255, 255))
+            im_red_mask_1 = cv2.inRange(hsvImg, (0, 150, 100), (15, 255, 255))
+            im_red_mask_2 = cv2.inRange(hsvImg, (165, 150, 100), (180, 255, 255))
             im_red_mask_1 = im_red_mask_1.astype('bool')
             im_red_mask_2 = im_red_mask_2.astype('bool')
             hsv_mask = im_red_mask_1 + im_red_mask_2

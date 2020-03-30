@@ -99,7 +99,8 @@ class MotionPlanning:
                 self.barrel_unloading(arena_floor)
 
             if self.car_timeout > 0 and time_out_factor > 0 and self.motor_on:
-                self.car_timer = threading.Timer(self.car_timeout, self.car.stop)
+                timeout = self.car_timeout * time_out_factor
+                self.car_timer = threading.Timer(timeout, self.car.stop)
                 self.car_timer.start()
         except:
             exc_type, exc_value, exc_traceback = sys.exc_info()

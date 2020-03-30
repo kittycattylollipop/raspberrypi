@@ -32,7 +32,7 @@ class EcoDisaster:
         self.frame_rate = 10
         self.visualize = False
 
-        self.param_auto_drive_timeout_factor = 1.0
+        self.param_auto_drive_timeout_factor = 0.5 #1.0
 
     def reset(self):
             self.percOut = [None, None] #output from perception
